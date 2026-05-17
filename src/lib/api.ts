@@ -2,7 +2,7 @@
 
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { ApiError, ApiResponse } from "../types/api";
-import { authStore } from "../store/authStore";
+import { useAuthStore } from "../store/authStore";
 
 
 const API_BASED_URL=process.env.NEXT_PUBLIC_API_BASE_URL
@@ -10,26 +10,48 @@ const CSRF_COOKIE_NAME = 'csrf_token';
 
 type RetryableRequest = InternalAxiosRequestConfig & {_retry ?: boolean}
 
-// helper function
+// csrf token helper function
 
 export const getCsrfToken =(): string| null =>{
+
+  // make the server side rendering safe
    if (typeof document === "undefined") {
     return null
    }
 
-   const match = document.cookie.split(';').map((c)=>c.trim().split('=')).find(([name]) => name === CSRF_COOKIE_NAME)
+   const cookie = document.cookie.split(';').map((c)=>c.trim().split('=')).find(([name]) => name === CSRF_COOKIE_NAME)
 
-   return match ? decodeURIComponent(match[1]) : null
+   return cookie ? decodeURIComponent(cookie[1]) : null
 }
 
-
+//handle error normalized
 export const normalizeError=(error : AxiosError) : ApiError =>{
-    const raw = error.response?.data as Partial<ApiError> | undefined
+   const raw = error.response?.data as Partial<ApiError> | undefined;
     return{
         message: raw?.message ?? error.message ?? 'An unexpected error occurred',
         statusCode : error.response?.status ?? 0,
         errors : raw?.errors
     }
+}
+
+
+//axios instance factory
+let isRefreshing = false
+let failedQueue: Array<{
+  resolve: (value: unknown) => void;
+  reject: (reason?: unknown) => void;
+}> = [];
+//store multiple 401 in queue
+const processQueue=(error : Error | null)=>{
+  failedQueue.forEach((pram)=>{
+    if (error) {
+      pram.reject(error)
+    }else{
+      pram.resolve(undefined)
+    }
+
+  })
+  failedQueue=[]
 }
 
 
@@ -40,40 +62,64 @@ export const normalizeError=(error : AxiosError) : ApiError =>{
         withCredentials: true,
         headers: {
             'Content-Type': 'application/json'
-        }
+        },
+        timeout: 15000
     })
 
     //request attach-csrf token and bearer Token
   instance.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
-      const csrf = getCsrfToken();
-      if (csrf) config.headers['x-csrf-token'] = csrf;
-
-      const { accessToken } = authStore.getState();
-      if (accessToken) config.headers['Authorization'] = `Bearer ${accessToken}`;
-
+     
+      const unsafeMethods = ['post', 'put', 'patch', 'delete'];
+      if (config.method && unsafeMethods.includes(config.method.toLowerCase())) {
+        const csrf = getCsrfToken();
+       
+        if (csrf) config.headers['x-csrf-token'] = csrf;
+      }
       return config;
     },
     (error) => Promise.reject(error)
   );
 
-  instance.interceptors.response.use(
+
+instance.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: AxiosError) => {
       const original = error.config as RetryableRequest;
 
+
       if (error.response?.status === 401 && !original?._retry) {
+        if (isRefreshing) {
+      
+          return new Promise((resolve, reject) => {
+            failedQueue.push({ resolve, reject });
+          })
+            .then(() => instance(original))
+            .catch((err) => Promise.reject(err));
+        }
+
         original._retry = true;
+        isRefreshing = true;
 
         try {
-          const { data } = await instance.post<ApiResponse<{ accessToken: string; refreshToken: string }>>(
-            '/auth/refresh-token'
-          );
-          authStore.getState().setAccessToken(data.data.accessToken)
+
+          await instance.post('/auth/refresh-token');
+          processQueue(null);
           return instance(original);
-        } catch {
-          authStore.getState().logout();
-          window.location.href = '/login';
+        } catch (refreshError) {
+          processQueue(refreshError as Error);
+
+     
+          const { useAuthStore } = await import('../store/authStore');
+          useAuthStore.getState().clearAuth();
+
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+
+          return Promise.reject(refreshError);
+        } finally {
+          isRefreshing = false;
         }
       }
 
@@ -81,10 +127,13 @@ export const normalizeError=(error : AxiosError) : ApiError =>{
     }
   );
 
+
   return instance;
 }
 export const axiosInstance = createAxiosInstance();
 
+
+//api  unwarap helper --> make api warper
 async function request<T>(
   fn: () => Promise<AxiosResponse<ApiResponse<T>>>
 ): Promise<ApiResponse<T>> {

@@ -1,0 +1,146 @@
+'use client';
+
+import { useCallback, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AuthService } from '../services/authService';
+import { useAuthStore } from '../store/authStore';
+import { LoginPayload, RegisterPayload } from '../types/auth';
+import { ApiError } from '../types/api';
+
+
+export const authQueryKeys = {
+  me: ['auth', 'me'] as const,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useCurrentUser
+// Only fires GET /auth/me when the user is already authenticated (persisted in
+// localStorage). On fresh visits (login / register pages) isAuthenticated is
+// false, so the query is disabled and the page renders immediately.
+// ─────────────────────────────────────────────────────────────────────────────
+export function useCurrentUser() {
+  const { setUser, setInitialized, clearAuth } = useAuthStore.getState();
+
+  // Read the PERSISTED value — this is hydrated from localStorage synchronously
+  // by Zustand before the first render, so it is safe to use as `enabled`.
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  // When the user is NOT authenticated we skip the API call entirely and mark
+  // the store as initialized right away so AuthProvider never shows a spinner.
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setInitialized(true);
+    }
+  }, [isAuthenticated, setInitialized]);
+
+  return useQuery({
+    queryKey: authQueryKeys.me,
+
+    queryFn: async () => {
+      try {
+        const res = await AuthService.getMe();
+        if (res.data?.user) {
+          setUser(res.data.user);
+        }
+        return res.data?.user ?? null;
+      } catch {
+        setInitialized(true);
+        clearAuth();
+        return null;
+      }
+    },
+
+    
+    enabled: isAuthenticated,
+
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useLogin
+// ─────────────────────────────────────────────────────────────────────────────
+export function useLogin() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { setUser, setLoading } = useAuthStore.getState();
+
+  return useMutation({
+    mutationFn: (payload: LoginPayload) => AuthService.login(payload),
+
+    onMutate: () => setLoading(true),
+
+    onSuccess: (res) => {
+      const user = res.data?.user;
+      if (user) {
+        setUser(user);
+        queryClient.setQueryData(authQueryKeys.me, user);
+      }
+      router.push('/');
+      router.refresh();
+    },
+
+    onError: (error: ApiError) => {
+      console.error('Login failed:', error.message);
+    },
+
+    onSettled: () => setLoading(false),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useRegister
+// ─────────────────────────────────────────────────────────────────────────────
+export function useRegister() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { setUser, setLoading } = useAuthStore.getState();
+
+  return useMutation({
+    mutationFn: (payload: RegisterPayload) => AuthService.register(payload),
+
+    onMutate: () => setLoading(true),
+
+    onSuccess: (res) => {
+      const user = res.data?.user;
+      if (user) {
+        setUser(user);
+        queryClient.setQueryData(authQueryKeys.me, user);
+      }
+      router.push('/login');
+      router.refresh();
+    },
+
+    onError: (error: ApiError) => {
+      console.error('Register failed:', error.message);
+    },
+
+    onSettled: () => setLoading(false),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// useLogout
+// ─────────────────────────────────────────────────────────────────────────────
+export function useLogout() {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const { clearAuth } = useAuthStore.getState();
+
+  return useCallback(async () => {
+    try {
+      await AuthService.logout();
+    } catch {
+      // Swallow — we still clear local state
+    } finally {
+      clearAuth();
+      queryClient.clear();
+      router.push('/login');
+      router.refresh();
+    }
+  }, [router, queryClient, clearAuth]);
+}

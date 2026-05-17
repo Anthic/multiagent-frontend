@@ -3,13 +3,18 @@
 export interface ApiError {
   message: string;
   statusCode: number;
-  errors?: Record<string, string>;
+  errors?: Record<string, string[]>;
 }
 
 export interface ApiResponse<T> {
-  data: T;
-  message: string | null;
-  success: boolean;
-  statusCode: number;
+  statusCode: number
+  data: T | null
+  success: boolean
+  message: string | null
+  meta?: {
+    page: number;
+    limit: number;
+    total: number;
+  };
 }
 

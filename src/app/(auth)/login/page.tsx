@@ -5,54 +5,75 @@ import Lottie from "lottie-react";
 import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 import gsap from "gsap";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import Link from "next/link";
+import { useLogin } from "../../../hooks/useAuth";
+import { ApiError } from "../../../types/api";
+import { loginSchema } from "@/src/validation/loginSchema";
+
+
+
+type LoginFormData = z.infer<typeof loginSchema>;
 
 const LoginPage = () => {
   const [init, setInit] = useState(false);
   const [lottieData, setLottieData] = useState<unknown>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
 
+  const { mutate: login, isPending } = useLogin();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+  });
+
+  // ── Particles init ──────────────────────────────────────────────
   useEffect(() => {
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
-    }).then(() => {
-      setInit(true);
-    });
+    }).then(() => setInit(true));
   }, []);
 
+  // ── Lottie load ─────────────────────────────────────────────────
   useEffect(() => {
     fetch("/lottie/Sign%20up.json")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Failed to load Lottie: ${response.status}`);
-        }
-
-        return response.json();
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to load Lottie: ${res.status}`);
+        return res.json();
       })
       .then((data) => setLottieData(data))
-      .catch((error) => console.error("Error loading Lottie data:", error));
+      .catch((err) => console.error("Error loading Lottie data:", err));
   }, []);
 
+  // ── GSAP card entrance ──────────────────────────────────────────
   useEffect(() => {
-    if (!cardRef.current) {
-      return;
-    }
-
+    if (!cardRef.current) return;
     gsap.fromTo(
       cardRef.current,
       { y: 50, opacity: 0, scale: 0.95 },
-      {
-        y: 0,
-        opacity: 1,
-        scale: 1,
-        duration: 1,
-        ease: "power3.out",
-        delay: 0.2,
-      }
+      { y: 0, opacity: 1, scale: 1, duration: 1, ease: "power3.out", delay: 0.2 }
     );
   }, []);
 
+  // ── Form submit ─────────────────────────────────────────────────
+  const onSubmit = (data: LoginFormData) => {
+    setServerError(null);
+    login(data, {
+      onError: (error: ApiError) => {
+        setServerError(error.message);
+      },
+    });
+  };
+
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#0a0a0a] font-sans">
+      {/* ── Particles background ── */}
       {init && (
         <Particles
           id="tsparticles"
@@ -90,10 +111,12 @@ const LoginPage = () => {
         />
       )}
 
+      {/* ── Card ── */}
       <div
         ref={cardRef}
         className="relative z-10 flex w-11/12 max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl md:flex-row"
       >
+        {/* ── Left: Form panel ── */}
         <div className="flex w-full flex-col justify-center p-8 md:w-1/2 md:p-12">
           <h2 className="mb-2 text-3xl font-bold tracking-wide text-white">
             Welcome Back
@@ -102,38 +125,89 @@ const LoginPage = () => {
             Sign in to continue your premium experience.
           </p>
 
-          <form className="space-y-5" onSubmit={(event) => event.preventDefault()}>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="space-y-5"
+            noValidate
+          >
+            {/* Server error banner */}
+            {serverError && (
+              <div className="rounded-lg border border-red-500/30 bg-red-500/20 p-3">
+                <p className="text-sm text-red-400">{serverError}</p>
+              </div>
+            )}
+
+            {/* Email */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-medium text-gray-300"
+              >
                 Email Address
               </label>
               <input
+                id="email"
                 type="email"
+                autoComplete="email"
                 placeholder="hello@example.com"
+                {...register("email")}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {errors.email && (
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.email.message}
+                </p>
+              )}
             </div>
 
+            {/* Password */}
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-300">
+              <label
+                htmlFor="password"
+                className="mb-2 block text-sm font-medium text-gray-300"
+              >
                 Password
               </label>
               <input
+                id="password"
                 type="password"
+                autoComplete="current-password"
                 placeholder="••••••••"
+                {...register("password")}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
+              {errors.password && (
+                <p className="mt-1 text-xs text-red-400">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
-            <button className="mt-6 w-full rounded-lg bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition-all duration-300 hover:-translate-y-0.5 hover:from-cyan-400 hover:via-blue-500 hover:to-violet-500">
-              Login
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={isPending}
+              className="mt-6 w-full rounded-lg bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition-all duration-300 hover:-translate-y-0.5 hover:from-cyan-400 hover:via-blue-500 hover:to-violet-500 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {isPending ? "Signing in..." : "Login"}
             </button>
           </form>
+
+          {/* Register link */}
+          <p className="mt-6 text-center text-sm text-slate-400">
+            Don't have an account?{" "}
+            <Link
+              href="/register"
+              className="font-medium text-blue-400 transition-colors hover:text-blue-300"
+            >
+              Register
+            </Link>
+          </p>
         </div>
 
+        {/* ── Right: Lottie panel ── */}
         <div className="relative hidden min-h-[520px] w-full items-center justify-center overflow-hidden bg-white/5 md:flex md:w-1/2">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 mix-blend-overlay" />
-
           <div className="relative z-10 flex h-full w-full items-center justify-center">
             {lottieData ? (
               <Lottie

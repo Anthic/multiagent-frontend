@@ -5,66 +5,62 @@ import { AuthUser } from '../types/auth';
 
 interface AuthState {
   user: AuthUser | null;
-  accessToken: string | null;
+  isInitialized: boolean;
 
   isAuthenticated: boolean;
   isLoading: boolean;
 
 
   setUser: (user: AuthUser) => void;
-  setAccessToken: (token: string) => void;
+  setInitialized: (isInitialized: boolean) => void;
   setLoading: (loading: boolean) => void;
-  logout: () => void;
+  clearAuth: () => void;
 }
 
-const initialState = {
-  user: null,
-  accessToken: null,
-  isAuthenticated: false,
-  isLoading: false,
-};
 
-export const authStore = create<AuthState>()(
+
+export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      ...initialState,
 
+      user: null,
+      isAuthenticated: false,
+      isLoading: false,
+      isInitialized: false,
+
+    
       setUser: (user) =>
         set({
           user,
-          isAuthenticated: !!user,
+          isAuthenticated: true,
+          isInitialized: true,
         }),
-
-    
-      setAccessToken: (accessToken) =>
-        set({ accessToken }),
-
-    
-      setTokens: (accessToken: string, _refreshToken: string) =>
-        set({ accessToken }),
 
       setLoading: (isLoading) => set({ isLoading }),
 
-      logout: () => {
-       
-        set(initialState);
-      },
+      setInitialized: (isInitialized) => set({ isInitialized }),
+
+
+      clearAuth: () =>
+        set({
+          user: null,
+          isAuthenticated: false,
+          isInitialized: true,
+        }),
     }),
     {
       name: 'auth-storage',
       storage: createJSONStorage(() => localStorage),
-
-     
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }
   )
 );
 
-// ✅ Selector hooks — re-render minimize করতে
-export const useUser = () => authStore((s) => s.user);
-export const useIsAuthenticated = () => authStore((s) => s.isAuthenticated);
-export const useAccessToken = () => authStore((s) => s.accessToken);
+
+export const useUser = () => useAuthStore((s) => s.user);
+export const useIsAuthenticated = () => useAuthStore((s) => s.isAuthenticated);
+export const useIsLoading = () => useAuthStore((s) => s.isLoading);
+export const useIsInitialized = () => useAuthStore((s) => s.isInitialized);
