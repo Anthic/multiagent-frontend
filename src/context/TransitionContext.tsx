@@ -61,7 +61,7 @@ export const TransitionProvider = ({ children }: { children: React.ReactNode }) 
       const tl = gsap.timeline({ onComplete: resolve });
 
       pathsRef.current.forEach((path) => {
-        const totalLength = path.getTotalLength();
+        const totalLength = path.getTotalLength() || 10000;
         tl.to(path, {
           strokeDashoffset: -totalLength,
           attr: { 'stroke-width': 200 },

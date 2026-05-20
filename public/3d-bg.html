@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Atlas Engine | Premium 3D Background</title>
+  <meta name="description" content="A highly optimized, modern 3D animated website background system powered by Three.js.">
+  
+  <style>
+    /* RESET & CORE STYLES */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: #050508;
+    }
+
+    body {
+      color: #ffffff;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      min-height: 300vh;
+      overflow-x: hidden;
+      background-color: #050508;
+      background-image: linear-gradient(135deg, #050508 0%, #0a0a14 50%, #080510 100%);
+    }
+
+    /* 3D CANVAS CONTAINER */
+    #canvas-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      filter: contrast(1.05) brightness(1.1);
+      overflow: hidden;
+      transition: filter 0.3s ease;
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* POST-PROCESSING VIGNETTE & SCANLINES */
+    /* CSS Radial Vignette Overlay */
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 2;
+      background: radial-gradient(circle, transparent 35%, rgba(5, 5, 8, 0.8) 100%);
+    }
+
+    /* Subtle Scanline Texture at 3% Opacity */
+    .scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 3;
+      background: repeating-linear-gradient(
+        rgba(0, 0, 0, 0) 0px,
+        rgba(0, 0, 0, 0) 2px,
+        rgba(0, 0, 0, 0.4) 2px,
+        rgba(0, 0, 0, 0.4) 4px
+      );
+      opacity: 0.03;
+    }
+
+    /* TYPOGRAPHIC OVERLAYS (FOR DEMONSTRATION & DESIGN WOW-FACTOR) */
+    #page-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 2rem;
+    }
+
+    section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      background: transparent;
+      pointer-events: none; /* Let clicks pass through to standard links */
+    }
+
+    /* Future-proof container styling for custom headers */
+    .hero-content, .section-content {
+      max-width: 600px;
+      pointer-events: auto; /* Re-enable pointer events for actual content */
+    }
+
+    .section-2 {
+      align-items: flex-end;
+      text-align: right;
+    }
+
+    .section-3 {
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    /* Modern Web3 / AI Typography Styles */
+    .badge {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      border-radius: 100px;
+      background: rgba(124, 58, 237, 0.1);
+      border: 1px solid rgba(124, 58, 237, 0.2);
+      color: #a855f7;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(10px);
+    }
+
+    h1, h2 {
+      font-size: clamp(2.5rem, 5vw, 4.5rem);
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+      background: linear-gradient(180deg, #ffffff 0%, #a855f7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1rem;
+    }
+
+    h2 {
+      background: linear-gradient(180deg, #ffffff 0%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .tagline {
+      font-size: clamp(1rem, 2vw, 1.25rem);
+      color: #94a3b8;
+      line-height: 1.6;
+      margin-bottom: 2rem;
+    }
+
+    /* Futuristic Scroll Indicator */
+    .scroll-indicator {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: #64748b;
+      font-size: 0.75rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+
+    .scroll-mouse {
+      width: 20px;
+      height: 35px;
+      border: 2px solid #475569;
+      border-radius: 20px;
+      position: relative;
+    }
+
+    .scroll-wheel {
+      width: 4px;
+      height: 8px;
+      background-color: #06b6d4;
+      border-radius: 2px;
+      position: absolute;
+      top: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      animation: scrollAnim 1.8s infinite ease-in-out;
+    }
+
+    @keyframes scrollAnim {
+      0% { top: 6px; opacity: 1; }
+      50% { top: 18px; opacity: 0; }
+      100% { top: 6px; opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FIXED CANVAS CONTAINER -->
+  <div id="canvas-container">
+    <canvas id="three-canvas"></canvas>
+  </div>
+
+  <!-- SCANLINE OVERLAY -->
+  <div class="scanlines"></div>
+
+  <!-- SCROLLABLE PAGE CONTENT -->
+  <div id="page-content">
+    
+    <!-- SECTION 1: HERO -->
+    <section class="hero">
+      <div class="hero-content">
+        <span class="badge">Atlas System / Active</span>
+        <h1>Architecting<br>Cognitive Frontiers</h1>
+        <p class="tagline">Deploying autonomous multi-agent pipelines powered by decentralised hyper-graphs and real-time neural alignment.</p>
+      </div>
+      <div class="scroll-indicator">
+        <span>Scroll</span>
+        <div class="scroll-mouse">
+          <div class="scroll-wheel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 2: SYNAPSE -->
+    <section class="section-2">
+      <div class="section-content">
+        <span class="badge" style="background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.2); color: #06b6d4;">Engine Layer</span>
+        <h2>Procedural<br>Optimization</h2>
+        <p class="tagline">Dynamically balanced computational systems featuring state-of-the-art Web3 data vectors and real-time rendering pipelines.</p>
+      </div>
+    </section>
+
+    <!-- SECTION 3: QUANTUM -->
+    <section class="section-3">
+      <div class="section-content">
+        <span class="badge">Hyper-dimensional</span>
+        <h2>Decentralized<br>Consensus</h2>
+        <p class="tagline">Securing trustless multi-agent operations across distributed peer layers with zero knowledge computation wrappers.</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- THREE.JS & SCRIPTS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+  <script>
+    // --- GLOBAL STATE & CONFIG ---
+    let scene, camera, renderer;
+    let modelGroup = null; // Container for the 3D head model
+    let particleSystem = null;
+    let particleData = [];
+    let unscaledModelHeight = 3.5; // Base height of procedural model
+
+    // Responsive configuration settings
+    let targetVH = 0.60; // Default desktop: 60% of viewport height
+    let rotationSpeedMultiplier = 1.0; // Dynamic modifier based on device
+    let baseScale = 1.0; // Dynamically computed scale based on camera distance
+
+    // Performance monitoring variables
+    let frameCount = 0;
+    let lastTime = performance.now();
+    let fpsSum = 0;
+    let fpsChecked = false;
+    const MAX_PARTICLES = 180;
+
+    // --- INITIALIZE APPLICATION ---
+    function init() {
+      // 1. Scene setup (transparent background as requested)
+      scene = new THREE.Scene();
+
+      // 2. Camera setup
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+      camera.position.set(0, 0, 8); // Perfect depth placement
+
+      // 3. Renderer setup
+      const canvas = document.getElementById('three-canvas');
+      renderer = new THREE.WebGLRenderer({
+        canvas: canvas,
+        alpha: true,           // Transparent canvas for CSS background integration
+        antialias: true,       // Smooth anti-aliased geometry edges
+        powerPreference: 'high-performance'
+      });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      
+      // Keep device pixel ratio capped at 2 for optimized rendering
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      renderer.setPixelRatio(dpr);
+
+      // 4. Lighting setup (Premium cyber-punk tone)
+      const ambientLight = new THREE.AmbientLight(0x1a0533, 0.4); // Dark purple shadow fill
+      scene.add(ambientLight);
+
+      // PointLight 1 (Deep Violet Front-Right)
+      const pointLight1 = new THREE.PointLight(0x7c3aed, 2.5, 15);
+      pointLight1.position.set(3, 3, 3);
+      scene.add(pointLight1);
+
+      // PointLight 2 (Bright Cyan Front-Left)
+      const pointLight2 = new THREE.PointLight(0x06b6d4, 1.5, 15);
+      pointLight2.position.set(-3, -2, 2);
+      scene.add(pointLight2);
+
+      // DirectionalLight (Key top highlight)
+      const dirLight = new THREE.DirectionalLight(0xffffff, 0.3);
+      dirLight.position.set(0, 5, 5);
+      scene.add(dirLight);
+
+      // RimLight effect (A855F7 Behind Model)
+      const rimLight = new THREE.PointLight(0xa855f7, 3.0, 15);
+      rimLight.position.set(0, 1, -4);
+      scene.add(rimLight);
+
+      // 5. Initialize the Model Group container
+      modelGroup = new THREE.Group();
+      scene.add(modelGroup);
+
+      // 6. Particle system generation
+      createParticles();
+
+      // 7. Load GLTF or Generate Procedural Placeholder
+      loadAtlasModel();
+
+      // 8. Event listeners
+      window.addEventListener('resize', onWindowResize);
+      
+      // Set initial size configuration
+      updateDimensions();
+
+      // 9. Start loop
+      animate();
+    }
+
+    // --- PROCEDURAL PARTICLE SYSTEM ---
+    // Generates a soft glow texture for anti-aliased particles
+    function createParticleTexture() {
+      const canvas = document.createElement('canvas');
+      canvas.width = 16;
+      canvas.height = 16;
+      const ctx = canvas.getContext('2d');
+      
+      const grad = ctx.createRadialGradient(8, 8, 0, 8, 8, 8);
+      grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+      grad.addColorStop(0.3, 'rgba(255, 255, 255, 0.8)');
+      grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 16, 16);
+      
+      return new THREE.CanvasTexture(canvas);
+    }
+
+    function createParticles() {
+      const geometry = new THREE.BufferGeometry();
+      const positions = new Float32Array(MAX_PARTICLES * 3);
+      const colors = new Float32Array(MAX_PARTICLES * 3);
+
+      const colorPalette = [
+        new THREE.Color('#7c3aed'), // Violet
+        new THREE.Color('#a855f7'), // Purple
+        new THREE.Color('#06b6d4'), // Cyan
+        new THREE.Color('#ffffff')  // Tech White
+      ];
+
+      for (let i = 0; i < MAX_PARTICLES; i++) {
+        // Generate uniform spherical distribution (radius 4 to 8 units)
+        const radius = 4 + Math.random() * 4;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos((Math.random() * 2) - 1);
+
+        const x = radius * Math.sin(phi) * Math.cos(theta);
+        const y = radius * Math.sin(phi) * Math.sin(theta);
+        const z = radius * Math.cos(phi);
+
+        positions[i * 3] = x;
+        positions[i * 3 + 1] = y;
+        positions[i * 3 + 2] = z;
+
+        // Populate velocities
+        particleData.push({
+          x: x,
+          y: y,
+          z: z,
+          vx: (Math.random() - 0.5) * 0.003,
+          vy: (Math.random() - 0.5) * 0.003,
+          vz: (Math.random() - 0.5) * 0.003
+        });
+
+        // Mix particle colors
+        const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+        colors[i * 3] = color.r;
+        colors[i * 3 + 1] = color.g;
+        colors[i * 3 + 2] = color.b;
+      }
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+      // PointMaterial with dynamic sizing, transparent textures, and additive blending
+      const material = new THREE.PointsMaterial({
+        size: 0.15,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.8,
+        map: createParticleTexture(),
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+
+      particleSystem = new THREE.Points(geometry, material);
+      scene.add(particleSystem);
+    }
+
+    // --- MODEL LOADING & FALLBACK SYSTEMS ---
+    function loadAtlasModel() {
+      const loader = new THREE.GLTFLoader();
+      
+      // Try to load local glb model
+      loader.load(
+        'model/atlas_head.glb',
+        (gltf) => {
+          // Model successfully fetched
+          const model = gltf.scene;
+          
+          // Re-color and apply stylish glow shader to imported meshes
+          model.traverse((child) => {
+            if (child.isMesh) {
+              styleMesh(child);
+            }
+          });
+
+          // Measure size of imported GLTF model for exact screen fitting
+          const box = new THREE.Box3().setFromObject(model);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          unscaledModelHeight = size.y || 3.5;
+          
+          modelGroup.add(model);
+          updateDimensions();
+          console.log('GLTF loaded successfully. Dimensions aligned.');
+        },
+        undefined,
+        (err) => {
+          // Graceful fallback to procedural masterpiece if opened via local file protocol or missing file
+          console.warn('GLTF loading failed or CORS restriction active. Procedurally generating Atlas Titan model...');
+          createProceduralHead();
+        }
+      );
+    }
+
+    // Helper to traverse and apply our customized dark modern materials to GLB meshes
+    function styleMesh(mesh) {
+      const originalGeom = mesh.geometry;
+      
+      // Solid base material with custom primary purple and emissive glows
+      const solidMaterial = new THREE.MeshStandardMaterial({
+        color: 0x7c3aed,
+        emissive: 0x3b1f7a,
+        roughness: 0.2,
+        metalness: 0.8,
+        flatShading: true
+      });
+      
+      mesh.material = solidMaterial;
+
+      // Add a premium glowing outer edge line mesh overlay
+      const edges = new THREE.EdgesGeometry(originalGeom);
+      const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0xa855f7,
+        transparent: true,
+        opacity: 0.4
+      });
+      
+      const wireframe = new THREE.LineSegments(edges, lineMaterial);
+      mesh.add(wireframe);
+    }
+
+    // procedurally generate a stylized geometric skull/head wireframe-solid hybrid
+    function createProceduralHead() {
+      // Clean out any remnants before constructing placeholder meshes
+      clearGroup(modelGroup);
+
+      // Group to contain all visual elements of our Atlas procedural model
+      const proceduralModel = new THREE.Group();
+
+      // Common materials for our tech cybernetic aesthetic
+      const solidMaterial = new THREE.MeshStandardMaterial({
+        color: 0x7c3aed, // Primary purple
+        emissive: 0x3b1f7a, // Inner glow
+        metalness: 0.9,
+        roughness: 0.15,
+        flatShading: true // Gives beautiful low-poly faceted reflections
+      });
+
+      const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0xa855f7, // Wireframe overlay color
+        transparent: true,
+        opacity: 0.4
+      });
+
+      // Cybernetic Cyan Eye Materials
+      const eyeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x06b6d4, // Cyan glow
+        emissive: 0x06b6d4,
+        emissiveIntensity: 2.5,
+        roughness: 0.1
+      });
+
+      // Procedural components: [Geometry, Position vector, Scale vector]
+      const parts = [
+        // Cranium (Low-poly head sphere)
+        { 
+          geo: new THREE.SphereGeometry(1.4, 8, 6), 
+          pos: [0, 0.5, 0], 
+          scale: [1, 1.1, 1.05] 
+        },
+        // Jaw Structure
+        { 
+          geo: new THREE.BoxGeometry(1.2, 1.1, 1.4), 
+          pos: [0, -0.4, 0.2], 
+          scale: [0.9, 0.9, 1] 
+        },
+        // Chin
+        { 
+          geo: new THREE.BoxGeometry(0.8, 0.6, 0.6), 
+          pos: [0, -0.9, 0.75], 
+          scale: [1, 1, 1] 
+        },
+        // Nose Ridge
+        { 
+          geo: new THREE.BoxGeometry(0.3, 0.9, 0.5), 
+          pos: [0, 0.1, 1.0], 
+          scale: [1, 1, 1] 
+        },
+        // Cheekbone Left
+        { 
+          geo: new THREE.BoxGeometry(0.5, 0.4, 0.8), 
+          pos: [-0.68, -0.1, 0.6], 
+          scale: [1, 1, 1] 
+        },
+        // Cheekbone Right
+        { 
+          geo: new THREE.BoxGeometry(0.5, 0.4, 0.8), 
+          pos: [0.68, -0.1, 0.6], 
+          scale: [1, 1, 1] 
+        },
+        // Brow ridge
+        { 
+          geo: new THREE.BoxGeometry(1.5, 0.3, 0.4), 
+          pos: [0, 0.6, 0.9], 
+          scale: [1, 1, 1] 
+        },
+        // Cylinder Neck
+        { 
+          geo: new THREE.CylinderGeometry(0.65, 0.85, 1.4, 6), 
+          pos: [0, -1.3, -0.2], 
+          scale: [1, 1, 1] 
+        }
+      ];
+
+      // Assemble procedural segments with double layering (Solid + Edges Wireframe)
+      parts.forEach(part => {
+        const mesh = new THREE.Mesh(part.geo, solidMaterial);
+        mesh.position.set(...part.pos);
+        mesh.scale.set(...part.scale);
+
+        // Build glowing structural edges
+        const edges = new THREE.EdgesGeometry(part.geo);
+        const wireframe = new THREE.LineSegments(edges, lineMaterial);
+        mesh.add(wireframe);
+
+        proceduralModel.add(mesh);
+      });
+
+      // cybernetic Glowing Cyan Eyes
+      const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), eyeMaterial);
+      eyeL.position.set(-0.42, 0.35, 0.95);
+      proceduralModel.add(eyeL);
+
+      const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), eyeMaterial);
+      eyeR.position.set(0.42, 0.35, 0.95);
+      proceduralModel.add(eyeR);
+
+      // Measure final layout of custom group
+      unscaledModelHeight = 3.6; // Solid exact calculation
+      
+      modelGroup.add(proceduralModel);
+      updateDimensions();
+    }
+
+    // Cleans up system memory when reloading models (anti-leak protection)
+    function clearGroup(group) {
+      while (group.children.length > 0) {
+        const child = group.children[0];
+        group.remove(child);
+        child.traverse((node) => {
+          if (node.geometry) node.geometry.dispose();
+          if (node.material) {
+            if (Array.isArray(node.material)) {
+              node.material.forEach(m => m.dispose());
+            } else {
+              node.material.dispose();
+            }
+          }
+        });
+      }
+    }
+
+    // --- RESPONSIVE & LAYOUT CONTROLS ---
+    function updateDimensions() {
+      // Dynamic updates across mobile, tablet & desktop viewport boundaries
+      if (window.innerWidth < 768) {
+        targetVH = 0.45; // Mobile: 45vh height footprint
+        rotationSpeedMultiplier = 0.60; // Rotation speed reduced by 40%
+      } else if (window.innerWidth <= 1024) {
+        targetVH = 0.55; // Tablet: 55vh height footprint
+        rotationSpeedMultiplier = 1.0;
+      } else {
+        targetVH = 0.60; // Desktop: 60vh height footprint
+        rotationSpeedMultiplier = 1.0;
+      }
+
+      // Exact pixel size fit mapping
+      const fovRad = (camera.fov * Math.PI) / 360;
+      const D = camera.position.z;
+      const visibleHeightAtOrigin = 2 * Math.tan(fovRad) * D;
+
+      // Base scale matching to satisfy proportional viewport heights
+      baseScale = (targetVH * visibleHeightAtOrigin) / unscaledModelHeight;
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+
+      renderer.setSize(window.innerWidth, window.innerHeight);
+
+      updateDimensions();
+    }
+
+    // --- PERFORMANCE OPTIMIZED ANIMATION LOOP ---
+    function animate() {
+      requestAnimationFrame(animate);
+
+      const time = performance.now() * 0.001;
+
+      // 1. Performance FPS Tracker (If average FPS < 30, drop particles 50% instantly)
+      monitorPerformance();
+
+      // 2. Slow, continuous Y-axis rotation (0.003 rad/frame on desktop)
+      if (modelGroup) {
+        modelGroup.rotation.y += 0.003 * rotationSpeedMultiplier;
+
+        // Subtle Float Up/Down Idle Wave Animation
+        const floatOffset = Math.sin(time * 1.5) * 0.12;
+
+        // PARALLAX SCROLL BEHAVIOR
+        // Model slowly moves DOWN on scroll with a factor of 0.3 (formula: position.y = baseY - scrollY * 0.003)
+        const baseY = 0;
+        const scrollParallaxY = -(window.scrollY * 0.003);
+        modelGroup.position.y = baseY + scrollParallaxY + floatOffset;
+
+        // Model scales down subtly from 1.0 to 0.85 as user scrolls to bottom
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollProgress = maxScroll > 0 ? window.scrollY / maxScroll : 0;
+        const scrollScaleFactor = 1.0 - (Math.min(scrollProgress, 1) * 0.15); // Scale range [1.0 -> 0.85]
+        
+        modelGroup.scale.setScalar(baseScale * scrollScaleFactor);
+      }
+
+      // 3. Particles physics calculation & Scroll Reaction
+      if (particleSystem) {
+        const positions = particleSystem.geometry.attributes.position.array;
+        const count = MAX_PARTICLES;
+
+        for (let i = 0; i < count; i++) {
+          // Slow dynamic drift physics
+          particleData[i].x += particleData[i].vx;
+          particleData[i].y += particleData[i].vy;
+          particleData[i].z += particleData[i].vz;
+
+          // Spherical boundary wrapper: wraps to opposite coordinate if drifting beyond outer threshold
+          const currentRadius = Math.sqrt(
+            particleData[i].x**2 + 
+            particleData[i].y**2 + 
+            particleData[i].z**2
+          );
+
+          if (currentRadius > 8.5) {
+            particleData[i].x = -particleData[i].x * 0.95;
+            particleData[i].y = -particleData[i].y * 0.95;
+            particleData[i].z = -particleData[i].z * 0.95;
+          }
+
+          // Apply values to WebGL buffers, adding beautiful secondary scroll parallax shift
+          positions[i * 3] = particleData[i].x;
+          positions[i * 3 + 1] = particleData[i].y - (window.scrollY * 0.0006); // Subtle secondary scroll layer offset
+          positions[i * 3 + 2] = particleData[i].z;
+        }
+        particleSystem.geometry.attributes.position.needsUpdate = true;
+      }
+
+      renderer.render(scene, camera);
+    }
+
+    // Monitor engine frames to verify lightweight performance
+    function monitorPerformance() {
+      if (fpsChecked) return;
+
+      const now = performance.now();
+      const delta = now - lastTime;
+      lastTime = now;
+
+      if (delta > 0) {
+        const currentFps = 1000 / delta;
+        fpsSum += currentFps;
+        frameCount++;
+
+        // Audit performance after rendering 100 frames (approx. 1.6s)
+        if (frameCount >= 100) {
+          const averageFps = fpsSum / frameCount;
+          if (averageFps < 30) {
+            console.warn(`System FPS below target threshold: ${averageFps.toFixed(1)} FPS. Activating draw range compression...`);
+            // Dynamic draw range fallback (Cut active points to exactly half)
+            if (particleSystem) {
+              particleSystem.geometry.setDrawRange(0, MAX_PARTICLES / 2);
+            }
+          }
+          fpsChecked = true; // Complete check routine
+        }
+      }
+    }
+
+    // Run system on load
+    window.onload = init;
+  </script>
+</body>
+</html>

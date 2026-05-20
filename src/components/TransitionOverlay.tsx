@@ -21,7 +21,7 @@ export const TransitionOverlay = () => {
       
       // 1. Initial State: Screen is COVERED by the strokes
       paths.forEach((path) => {
-        const length = path.getTotalLength();
+        const length = path.getTotalLength() || 10000;
         gsap.set(path, {
           strokeDasharray: length,
           strokeDashoffset: 0, // 0 means fully drawn (covering screen)
@@ -32,7 +32,7 @@ export const TransitionOverlay = () => {
       // 2. Initial Load Animation: Reveal the page
       const tl = gsap.timeline({ delay: 0.1 }); // small delay to ensure DOM is ready
       paths.forEach((path) => {
-        const length = path.getTotalLength();
+        const length = path.getTotalLength() || 10000;
         tl.to(path, {
           strokeDashoffset: -length, // wipe out
           attr: { 'stroke-width': 200 }, // shrink back to normal width
