@@ -12,12 +12,9 @@ export function AtlasHeadScene() {
     if (typeof window === 'undefined') return;
     if (!canvasRef.current) return;
 
-    let scene: THREE.Scene;
-    let camera: THREE.PerspectiveCamera;
-    let renderer: THREE.WebGLRenderer;
-    let modelGroup = new THREE.Group();
+    const modelGroup = new THREE.Group();
     let particleSystem: THREE.Points | null = null;
-    let particleData: Array<{ x: number; y: number; z: number; vx: number; vy: number; vz: number }> = [];
+    const particleData: Array<{ x: number; y: number; z: number; vx: number; vy: number; vz: number }> = [];
     let unscaledModelHeight = 3.5;
 
     // Responsive configurations
@@ -33,14 +30,14 @@ export function AtlasHeadScene() {
     const MAX_PARTICLES = 180;
 
     // 1. Initialize Scene
-    scene = new THREE.Scene();
+    const scene = new THREE.Scene();
 
     // 2. Initialize Camera
-    camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.position.set(0, 0, 8); // Perfect depth positioning
 
     // 3. Initialize WebGL Renderer
-    renderer = new THREE.WebGLRenderer({
+    const renderer = new THREE.WebGLRenderer({
       canvas: canvasRef.current,
       alpha: true,           // Seamless transparent integration with CSS page gradient
       antialias: true,       // Beautiful clean edges
@@ -50,25 +47,30 @@ export function AtlasHeadScene() {
     const dpr = Math.min(window.devicePixelRatio, 2);
     renderer.setPixelRatio(dpr);
 
-    // 4. Initialize Core Lights (Rich Cyberpunk Colors)
-    const ambientLight = new THREE.AmbientLight(0x1a0533, 0.4); // Subtle purple shadows
+    // Fog/mist effect
+    scene.fog = new THREE.Fog('#0d0a04', 12, 35);
+
+    // 4. Initialize Core Lights (Brighter Gold Setup)
+    const ambientLight = new THREE.AmbientLight(0x2a1a00, 0.5); // Brighter ambient
     scene.add(ambientLight);
 
-    const pointLight1 = new THREE.PointLight(0x7c3aed, 2.5, 15); // Deep purple key light
-    pointLight1.position.set(3, 3, 3);
-    scene.add(pointLight1);
-
-    const pointLight2 = new THREE.PointLight(0x06b6d4, 1.5, 15); // Cyan accent fill
-    pointLight2.position.set(-3, -2, 2);
-    scene.add(pointLight2);
-
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0.3); // Top highlight
-    dirLight.position.set(0, 5, 5);
+    const dirLight = new THREE.DirectionalLight(0xffb732, 2.5); // Much brighter warm gold from top
+    dirLight.position.set(5, 8, 3);
     scene.add(dirLight);
 
-    const rimLight = new THREE.PointLight(0xa855f7, 3.0, 15); // Edge silhouetting from behind
-    rimLight.position.set(0, 1, -4);
-    scene.add(rimLight);
+    const pointLight1 = new THREE.PointLight(0xd4a017, 2.0, 15); // Lighter amber from left
+    pointLight1.position.set(-5, 2, 3);
+    scene.add(pointLight1);
+
+    const pointLight2 = new THREE.PointLight(0xffdf73, 3.0, 15); // Brighter rim light
+    pointLight2.position.set(0, -2, -5);
+    scene.add(pointLight2);
+
+    const pointLight3 = new THREE.PointLight(0x1a1200, 0.4, 15); // Subtle cool shadow fill
+    pointLight3.position.set(3, -4, 2);
+    scene.add(pointLight3);
+
+    // Environment/IBL fallback - handled in materials now
 
     // 5. Add Model Container
     scene.add(modelGroup);
@@ -146,25 +148,14 @@ export function AtlasHeadScene() {
 
     // 7. Custom travesal style mesh loader
     function styleMesh(mesh: THREE.Mesh) {
-      const originalGeom = mesh.geometry;
       const solidMaterial = new THREE.MeshStandardMaterial({
-        color: 0x7c3aed,
-        emissive: 0x3b1f7a,
-        roughness: 0.2,
-        metalness: 0.8,
-        flatShading: true
+        color: 0xcd9a2b,       // Lighter, brighter gold
+        emissive: 0x4a3200,    // Slightly warmer inner glow
+        emissiveIntensity: 0.4,
+        metalness: 0.90,       // Very metallic
+        roughness: 0.15,       // Smoother for better sharp reflections
       });
       mesh.material = solidMaterial;
-
-      // Glow Edges Wireframe
-      const edges = new THREE.EdgesGeometry(originalGeom);
-      const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0xa855f7,
-        transparent: true,
-        opacity: 0.4
-      });
-      const wireframe = new THREE.LineSegments(edges, lineMaterial);
-      mesh.add(wireframe);
     }
 
     // 8. Low-Poly Procedural Placeholder Skull/Head System
@@ -234,13 +225,14 @@ export function AtlasHeadScene() {
       while (group.children.length > 0) {
         const child = group.children[0];
         group.remove(child);
-        child.traverse((node: any) => {
-          if (node.geometry) node.geometry.dispose();
-          if (node.material) {
-            if (Array.isArray(node.material)) {
-              node.material.forEach((m: THREE.Material) => m.dispose());
+        child.traverse((node: THREE.Object3D) => {
+          const meshNode = node as THREE.Mesh;
+          if (meshNode.geometry) meshNode.geometry.dispose();
+          if (meshNode.material) {
+            if (Array.isArray(meshNode.material)) {
+              meshNode.material.forEach((m: THREE.Material) => m.dispose());
             } else {
-              node.material.dispose();
+              meshNode.material.dispose();
             }
           }
         });
@@ -253,21 +245,30 @@ export function AtlasHeadScene() {
       '/model/atlas_head.glb',
       (gltf) => {
         const model = gltf.scene;
-        model.traverse((child: any) => {
-          if (child.isMesh) {
-            styleMesh(child);
+        model.traverse((child: THREE.Object3D) => {
+          const meshChild = child as THREE.Mesh;
+          if (meshChild.isMesh) {
+            styleMesh(meshChild);
           }
         });
         const box = new THREE.Box3().setFromObject(model);
         const size = new THREE.Vector3();
+        const center = new THREE.Vector3();
         box.getSize(size);
+        box.getCenter(center);
+        
+        // Recenter the model so the exact middle of the bounding box is the pivot
+        model.position.x = -center.x;
+        model.position.y = -center.y;
+        model.position.z = -center.z;
+
         unscaledModelHeight = size.y || 3.5;
         modelGroup.add(model);
         updateDimensions();
         console.log('GLTF loaded successfully inside Next.js page.');
       },
       undefined,
-      (err) => {
+      (_err) => {
         console.warn('GLTF loading failed or CORS restriction active. Generating procedural Atlas model...');
         createProceduralHead();
       }
@@ -300,6 +301,17 @@ export function AtlasHeadScene() {
     }
 
     window.addEventListener('resize', onWindowResize);
+    
+    // Add Mouse Tracking Setups
+    const mouse = { x: 0, y: 0 };
+    const targetRotation = { x: 0, y: 0 };
+
+    function onMouseMove(event: MouseEvent) {
+      mouse.x = (event.clientX / window.innerWidth - 0.5) * 2;
+      mouse.y = (event.clientY / window.innerHeight - 0.5) * 2;
+    }
+    window.addEventListener('mousemove', onMouseMove);
+
     updateDimensions();
 
     // 11. Performance check (FPS auditing logic)
@@ -327,19 +339,41 @@ export function AtlasHeadScene() {
 
     // 12. requestAnimationFrame Animation loop
     let animationId: number;
+    let lastAnimateTime = performance.now();
     function animate() {
       animationId = requestAnimationFrame(animate);
-      const time = performance.now() * 0.001;
+      const currentTime = performance.now();
+      const deltaTime = (currentTime - lastAnimateTime) * 0.001; // in seconds
+      lastAnimateTime = currentTime;
+      const time = currentTime * 0.001;
 
       monitorPerformance();
 
       if (modelGroup) {
-        modelGroup.rotation.y += 0.003 * rotationSpeedMultiplier;
+        // Assume the head looks to the right. We rotate it left by 90 degrees to face forward.
+        // Change '- Math.PI / 2' to '+ Math.PI / 2' if it ends up facing backwards.
+        targetRotation.y = (mouse.x * 0.35) - (Math.PI / 2);
+        targetRotation.x = -mouse.y * 0.15;
+
+        // Smooth Lerp for Mouse Tracking
+        modelGroup.rotation.y = THREE.MathUtils.lerp(
+          modelGroup.rotation.y,
+          targetRotation.y,
+          deltaTime * 2.0
+        );
+        modelGroup.rotation.x = THREE.MathUtils.lerp(
+          modelGroup.rotation.x,
+          targetRotation.x,
+          deltaTime * 2.0
+        );
+
         const floatOffset = Math.sin(time * 1.5) * 0.12;
 
-        const baseY = 0;
+        const baseY = 0.5; // Lowered slightly from 1.0
         const scrollParallaxY = -(window.scrollY * 0.003);
-        modelGroup.position.y = baseY + scrollParallaxY + floatOffset;
+        
+        // Centered horizontally (x=0), and applied scroll/float on Y
+        modelGroup.position.set(0, baseY + scrollParallaxY + floatOffset, 0);
 
         const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
         const scrollProgress = maxScroll > 0 ? window.scrollY / maxScroll : 0;
@@ -386,6 +420,7 @@ export function AtlasHeadScene() {
     return () => {
       cancelAnimationFrame(animationId);
       window.removeEventListener('resize', onWindowResize);
+      window.removeEventListener('mousemove', onMouseMove);
       clearGroup(modelGroup);
       if (particleSystem) {
         particleSystem.geometry.dispose();

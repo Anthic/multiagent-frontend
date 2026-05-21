@@ -33,13 +33,26 @@ export function AtlasHeadCanvas({ scrollProgress }: AtlasHeadCanvasProps) {
       <Canvas
         camera={{ position: [0, 0, 15], fov: 45 }}
         style={{ background: 'transparent' }}
-        gl={{ alpha: true, antialias: false, powerPreference: "high-performance" }}
+        gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
         dpr={[1, 1.5]}
       >
-        <ambientLight intensity={0.6} />
-        <directionalLight position={[5, 5, 5]} intensity={1.5} />
-        <pointLight position={[-4, -4, -4]} intensity={0.5} color="#6366f1" />
-        <pointLight position={[4, 0, 2]} intensity={0.3} color="#a855f7" />
+        {/* Dark gold lighting setup */}
+        <ambientLight intensity={0.3} color="#1a0f00" />
+        
+        {/* Key light - warm gold উপর থেকে */}
+        <directionalLight position={[5, 8, 3]} intensity={2.0} color="#c8922a" />
+        
+        {/* Fill light - deep amber বাম থেকে */}
+        <pointLight position={[-5, 2, 3]} intensity={1.5} color="#8b5e0a" />
+        
+        {/* Rim light - পেছন থেকে গোল্ড edge */}
+        <pointLight position={[0, -2, -5]} intensity={2.5} color="#d4a017" />
+        
+        {/* Subtle cool shadow fill */}
+        <pointLight position={[3, -4, 2]} intensity={0.4} color="#1a1200" />
+
+        {/* Fog/mist effect */}
+        <fog attach="fog" args={['#0d0a04', 12, 35]} />
 
         <Suspense fallback={
           <mesh>
@@ -47,7 +60,7 @@ export function AtlasHeadCanvas({ scrollProgress }: AtlasHeadCanvasProps) {
             <meshBasicMaterial color="red" wireframe />
           </mesh>
         }>
-          <Environment preset="city" />
+          <Environment preset="sunset" />
           <AtlasHeadModel scrollProgress={scrollProgress} />
         </Suspense>
       </Canvas>

@@ -12,9 +12,9 @@ export default function HomePage() {
     <main 
       className="min-h-screen relative overflow-hidden" 
       style={{
-        backgroundColor: '#050508',
-        backgroundImage: 'linear-gradient(135deg, #050508 0%, #0a0a14 50%, #080510 100%)',
-        color: '#ffffff'
+        backgroundColor: '#f5f0e8',
+        backgroundImage: 'linear-gradient(135deg, #f5f0e8 0%, #ede8d8 100%)',
+        color: '#1a1a1a'
       }}
     >
       <Navbar />
@@ -32,7 +32,7 @@ export default function HomePage() {
           height: '100vh',
           pointerEvents: 'none',
           zIndex: 2,
-          background: 'radial-gradient(circle, transparent 35%, rgba(5, 5, 8, 0.8) 100%)'
+          background: 'radial-gradient(circle, transparent 35%, rgba(245, 240, 232, 0.6) 100%)'
         }}
       />
 
@@ -42,23 +42,23 @@ export default function HomePage() {
         {/* SECTION 1: HERO */}
         <section className="min-h-screen flex flex-col justify-center bg-transparent pointer-events-none relative">
           <div className="max-w-[600px] pointer-events-auto">
-            <span className="inline-block px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-[#a855f7] text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
+            <span className="inline-block px-4 py-2 rounded-full bg-violet-600/10 border border-violet-600/20 text-[#7c3aed] text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
               Atlas System / Active
             </span>
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-white to-violet-500 bg-clip-text text-transparent mb-4">
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
               Architecting<br />Cognitive Frontiers
             </h1>
-            <p className="text-base sm:text-lg lg:text-xl text-slate-400 leading-relaxed mb-8">
+            <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed mb-8">
               Deploying autonomous multi-agent pipelines powered by decentralised hyper-graphs and real-time neural alignment.
             </p>
           </div>
           
           {/* Animated Scroll Mouse Indicator */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-slate-500 text-[12px] tracking-[0.2em] uppercase font-medium opacity-80">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 text-gray-500 text-[12px] tracking-[0.2em] uppercase font-medium opacity-80">
             <span>Scroll</span>
-            <div className="w-[20px] h-[35px] border-2 border-slate-600 rounded-[20px] relative">
+            <div className="w-[20px] h-[35px] border-2 border-gray-400 rounded-[20px] relative">
               <div 
-                className="w-[4px] h-[8px] bg-cyan-400 rounded-[2px] absolute top-[6px] left-1/2 -translate-x-1/2"
+                className="w-[4px] h-[8px] bg-violet-500 rounded-[2px] absolute top-[6px] left-1/2 -translate-x-1/2"
                 style={{
                   animation: 'scrollAnim 1.8s infinite ease-in-out'
                 }}
@@ -70,13 +70,13 @@ export default function HomePage() {
         {/* SECTION 2: SYNAPSE */}
         <section className="min-h-screen flex flex-col justify-center items-end text-right bg-transparent pointer-events-none">
           <div className="max-w-[600px] pointer-events-auto">
-            <span className="inline-block px-4 py-2 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
+            <span className="inline-block px-4 py-2 rounded-full bg-amber-600/10 border border-amber-600/20 text-amber-700 text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
               Engine Layer
             </span>
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-white to-cyan-500 bg-clip-text text-transparent mb-4">
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
               Procedural<br />Optimization
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-slate-400 leading-relaxed mb-8">
+            <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed mb-8">
               Dynamically balanced computational systems featuring state-of-the-art Web3 data vectors and real-time rendering pipelines.
             </p>
           </div>
@@ -85,13 +85,13 @@ export default function HomePage() {
         {/* SECTION 3: QUANTUM */}
         <section className="min-h-screen flex flex-col justify-center items-start text-left bg-transparent pointer-events-none">
           <div className="max-w-[600px] pointer-events-auto">
-            <span className="inline-block px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-[#a855f7] text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
+            <span className="inline-block px-4 py-2 rounded-full bg-violet-600/10 border border-violet-600/20 text-[#7c3aed] text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
               Hyper-dimensional
             </span>
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-white to-violet-500 bg-clip-text text-transparent mb-4">
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
               Decentralized<br />Consensus
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-slate-400 leading-relaxed mb-8">
+            <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed mb-8">
               Securing trustless multi-agent operations across distributed peer layers with zero knowledge computation wrappers.
             </p>
           </div>
