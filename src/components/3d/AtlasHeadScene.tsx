@@ -27,6 +27,7 @@ export function AtlasHeadScene() {
     let lastTime = performance.now();
     let fpsSum = 0;
     let fpsChecked = false;
+    let hasRevealedCanvas = false;
     const MAX_PARTICLES = 180;
 
     // 1. Initialize Scene
@@ -412,6 +413,11 @@ export function AtlasHeadScene() {
       }
 
       renderer.render(scene, camera);
+
+      if (!hasRevealedCanvas && containerRef.current) {
+        hasRevealedCanvas = true;
+        containerRef.current.style.opacity = '1';
+      }
     }
 
     animate();
@@ -449,7 +455,9 @@ export function AtlasHeadScene() {
           zIndex: 0,
           pointerEvents: 'none',
           filter: 'contrast(1.05) brightness(1.1)',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          opacity: 0,
+          transition: 'opacity 900ms ease'
         }}
       >
         <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />

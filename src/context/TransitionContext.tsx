@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useRef, useState, useCallback } from 'react';
+import React, { createContext, useContext, useRef, useState, useCallback, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import gsap from 'gsap';
 
@@ -25,55 +25,100 @@ export const TransitionProvider = ({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const [isTransitioning, setIsTransitioning] = useState(false);
   const pathsRef = useRef<SVGPathElement[]>([]);
+  const pathLengthsRef = useRef<number[]>([]);
   const isAnimatingRef = useRef(false);
+  const shouldEnterRef = useRef(false);
 
   const registerPaths = useCallback((paths: SVGPathElement[]) => {
     pathsRef.current = paths;
+    pathLengthsRef.current = paths.map((path) => path.getTotalLength() || 10000);
   }, []);
 
-  const leave = async () => {
+  const leave = useCallback(async () => {
     return new Promise<void>((resolve) => {
       if (pathsRef.current.length === 0) {
         resolve();
         return;
       }
 
-      const tl = gsap.timeline({ onComplete: resolve });
+      gsap.killTweensOf(pathsRef.current);
+
+      const tl = gsap.timeline({
+        defaults: {
+          duration: 0.9,
+          ease: 'power3.inOut',
+          overwrite: 'auto',
+        },
+        onComplete: resolve,
+      });
       
-      pathsRef.current.forEach((path) => {
+      pathsRef.current.forEach((path, index) => {
+        const totalLength = pathLengthsRef.current[index] || path.getTotalLength() || 10000;
+        gsap.set(path, {
+          strokeDasharray: totalLength,
+          strokeDashoffset: totalLength,
+          attr: { 'stroke-width': 680 },
+        });
+
         tl.to(path, {
           strokeDashoffset: 0,
-          attr: { 'stroke-width': 700 },
-          duration: 1,
-          ease: 'power1.inOut'
-        }, 0);
+        }, index * 0.035);
       });
     });
-  };
+  }, []);
 
-  const enter = async () => {
+  const enter = useCallback(async () => {
     return new Promise<void>((resolve) => {
       if (pathsRef.current.length === 0) {
         resolve();
         return;
       }
 
-      const tl = gsap.timeline({ onComplete: resolve });
+      gsap.killTweensOf(pathsRef.current);
 
-      pathsRef.current.forEach((path) => {
-        const totalLength = path.getTotalLength() || 10000;
+      const tl = gsap.timeline({
+        defaults: {
+          duration: 0.95,
+          ease: 'power3.inOut',
+          overwrite: 'auto',
+        },
+        onComplete: resolve,
+      });
+
+      pathsRef.current.forEach((path, index) => {
+        const totalLength = pathLengthsRef.current[index] || path.getTotalLength() || 10000;
         tl.to(path, {
           strokeDashoffset: -totalLength,
-          attr: { 'stroke-width': 200 },
-          duration: 1,
-          ease: 'power1.inOut',
           onComplete: () => {
-            gsap.set(path, { strokeDashoffset: totalLength });
+            gsap.set(path, {
+              strokeDashoffset: totalLength,
+              attr: { 'stroke-width': 680 },
+            });
           }
-        }, 0);
+        }, index * 0.035);
       });
     });
-  };
+  }, []);
+
+  useEffect(() => {
+    if (!shouldEnterRef.current) return;
+    shouldEnterRef.current = false;
+
+    let cancelled = false;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(async () => {
+        if (cancelled) return;
+        await enter();
+        if (cancelled) return;
+        isAnimatingRef.current = false;
+        setIsTransitioning(false);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname, enter]);
 
   const navigate = async (href: string) => {
     if (isAnimatingRef.current || href === pathname) return;
@@ -85,18 +130,8 @@ export const TransitionProvider = ({ children }: { children: React.ReactNode }) 
     await leave();
 
     // Next.js Route Change
+    shouldEnterRef.current = true;
     router.push(href);
-
-    // We need a small delay to ensure the DOM has updated before running the enter animation.
-    // In a real app, you might want to wait for a specific 'page loaded' event if you have heavy data fetching.
-    setTimeout(async () => {
-        // Phase 2: Enter animation (screen clears)
-        await enter();
-        
-        isAnimatingRef.current = false;
-        setIsTransitioning(false);
-    }, 100);
-
   };
 
   return (

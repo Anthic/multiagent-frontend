@@ -17,6 +17,8 @@ export const TransitionOverlay = () => {
     if (typeof window === 'undefined') return;
 
     const ctx = gsap.context(() => {
+      gsap.ticker.lagSmoothing(500, 33);
+
       const paths = [path1Ref.current, path2Ref.current].filter(Boolean) as SVGPathElement[];
       
       // 1. Initial State: Screen is COVERED by the strokes
@@ -25,24 +27,31 @@ export const TransitionOverlay = () => {
         gsap.set(path, {
           strokeDasharray: length,
           strokeDashoffset: 0, // 0 means fully drawn (covering screen)
-          attr: { 'stroke-width': 700 }, // thick strokes to cover
+          attr: { 'stroke-width': 680 }, // thick strokes to cover
         });
       });
 
       // 2. Initial Load Animation: Reveal the page
-      const tl = gsap.timeline({ delay: 0.1 }); // small delay to ensure DOM is ready
-      paths.forEach((path) => {
+      const tl = gsap.timeline({
+        delay: 0.05,
+        defaults: {
+          duration: 0.95,
+          ease: 'power3.inOut',
+          overwrite: 'auto',
+        },
+      });
+      paths.forEach((path, index) => {
         const length = path.getTotalLength() || 10000;
         tl.to(path, {
           strokeDashoffset: -length, // wipe out
-          attr: { 'stroke-width': 200 }, // shrink back to normal width
-          duration: 1.2,
-          ease: 'power2.inOut',
           onComplete: () => {
             // Reset to hidden state for future transitions
-            gsap.set(path, { strokeDashoffset: length });
+            gsap.set(path, {
+              strokeDashoffset: length,
+              attr: { 'stroke-width': 680 },
+            });
           }
-        }, 0);
+        }, index * 0.035);
       });
 
     }, containerRef);
@@ -60,12 +69,12 @@ export const TransitionOverlay = () => {
   return (
     <div 
         ref={containerRef}
-        className="fixed inset-0 w-full h-full pointer-events-none z-[100] scale-150 -translate-x-1/2 -translate-y-1/2 left-1/2 top-1/2"
+        className="fixed inset-0 left-1/2 top-1/2 z-[100] h-full w-full -translate-x-1/2 -translate-y-1/2 scale-150 transform-gpu pointer-events-none will-change-transform"
     >
       <svg
         preserveAspectRatio="none"
         viewBox="0 0 2453 2535"
-        className="w-full h-full"
+        className="h-full w-full overflow-visible"
       >
         <path
           ref={path1Ref}
