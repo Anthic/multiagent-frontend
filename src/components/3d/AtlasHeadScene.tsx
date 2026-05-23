@@ -76,6 +76,19 @@ export function AtlasHeadScene() {
     // 5. Add Model Container
     scene.add(modelGroup);
 
+    // Add a glowing scanning ring
+    const ringGeo = new THREE.RingGeometry(1.6, 1.65, 32);
+    const ringMat = new THREE.MeshBasicMaterial({
+      color: 0xffb732, // Gold glow
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0,
+      blending: THREE.AdditiveBlending
+    });
+    const scanningRing = new THREE.Mesh(ringGeo, ringMat);
+    scanningRing.rotation.x = Math.PI / 2; // Flat horizontal
+    scene.add(scanningRing);
+
     // 6. Generate Procedural Glow Particles
     function createParticleTexture() {
       const canvas = document.createElement('canvas');
@@ -381,6 +394,38 @@ export function AtlasHeadScene() {
         const scrollScaleFactor = 1.0 - (Math.min(scrollProgress, 1) * 0.15);
         
         modelGroup.scale.setScalar(baseScale * scrollScaleFactor);
+
+        if (scanningRing) {
+          const scrollY = window.scrollY;
+          const height = window.innerHeight;
+          const startScroll = height * 0.4;
+          const endScroll = height * 1.6;
+          
+          if (scrollY >= startScroll && scrollY <= endScroll) {
+            // Smoothly fade in scanning ring
+            (scanningRing.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp(
+              (scanningRing.material as THREE.MeshBasicMaterial).opacity,
+              0.9,
+              deltaTime * 4
+            );
+            
+            // Sweep Y position up and down relative to the model position
+            scanningRing.position.y = modelGroup.position.y + Math.sin(time * 2.2) * 1.1;
+            scanningRing.position.x = modelGroup.position.x;
+            scanningRing.position.z = modelGroup.position.z;
+            
+            // Pulse size
+            const scale = 1.0 + Math.sin(time * 4) * 0.04;
+            scanningRing.scale.set(scale, scale, scale);
+          } else {
+            // Smoothly fade out scanning ring
+            (scanningRing.material as THREE.MeshBasicMaterial).opacity = THREE.MathUtils.lerp(
+              (scanningRing.material as THREE.MeshBasicMaterial).opacity,
+              0,
+              deltaTime * 4
+            );
+          }
+        }
       }
 
       if (particleSystem) {
@@ -428,6 +473,11 @@ export function AtlasHeadScene() {
       window.removeEventListener('resize', onWindowResize);
       window.removeEventListener('mousemove', onMouseMove);
       clearGroup(modelGroup);
+
+      // Cleanup scanning ring
+      ringGeo.dispose();
+      ringMat.dispose();
+
       if (particleSystem) {
         particleSystem.geometry.dispose();
         if (Array.isArray(particleSystem.material)) {

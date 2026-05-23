@@ -1,6 +1,8 @@
 import { AtlasHeadSceneWrapper } from '@/src/components/3d/AtlasHeadSceneWrapper';
 import { AnimatedDescriptionText } from '@/src/components/AnimatedDescriptionText';
 import { Navbar } from '@/src/components/Navbar';
+import { EngineDiagnosticPanel } from '@/src/components/EngineDiagnosticPanel';
+import { RepositoryGalaxyMap } from '@/src/components/RepositoryGalaxyMap';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -92,34 +94,85 @@ export default function HomePage() {
         </section>
 
         {/* SECTION 2: SYNAPSE */}
-        <section className="min-h-screen flex flex-col justify-center items-end text-right bg-transparent pointer-events-none">
-          <div className="max-w-[600px] pointer-events-auto">
-            <span className="inline-block px-4 py-2 rounded-full bg-amber-600/10 border border-amber-600/20 text-amber-700 text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
-              Engine Layer
-            </span>
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
-              Procedural<br />Optimization
-            </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed mb-8">
-              Dynamically balanced computational systems featuring state-of-the-art Web3 data vectors and real-time rendering pipelines.
-            </p>
+        <section className="min-h-screen flex items-center justify-center bg-transparent pointer-events-none py-20">
+          <div className="grid lg:grid-cols-[1.1fr_1fr] gap-12 sm:gap-16 items-center w-11/12 mx-auto pointer-events-auto">
+            {/* Text Description Left Column */}
+            <div className="flex flex-col items-start text-left space-y-6 max-w-[540px]">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-600/10 border border-amber-600/20 text-amber-800 text-[12px] font-semibold tracking-widest uppercase backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#d4a017] animate-pulse" />
+                Engine Layer
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.08] tracking-tight bg-gradient-to-b from-gray-950 to-gray-700 bg-clip-text text-transparent">
+                Procedural<br />Optimization
+              </h2>
+              <p className="text-base sm:text-lg text-black/75 leading-[1.65]">
+                atlash.ai operates a dynamically balanced multi-agent orchestration engine. 
+                When a complex research question is processed, the system automatically spawns 
+                specialized agents to index vector search spaces, parse queries, scrape sources, 
+                and synthesize semantic layers in real-time.
+              </p>
+              <div className="pt-4 border-t border-black/10 w-full">
+                <span className="text-[11px] font-mono uppercase tracking-widest text-black/45 block mb-2 font-bold">
+                  System Commands Active
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-2.5 py-1 rounded bg-black/5 text-black/60 font-mono text-[10px] select-none hover:bg-black/10 cursor-pointer transition-colors">/search</span>
+                  <span className="px-2.5 py-1 rounded bg-black/5 text-black/60 font-mono text-[10px] select-none hover:bg-black/10 cursor-pointer transition-colors">/synthesize</span>
+                  <span className="px-2.5 py-1 rounded bg-black/5 text-black/60 font-mono text-[10px] select-none hover:bg-black/10 cursor-pointer transition-colors">/optimize</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Diagnostic Panel Right Column */}
+            <div className="w-full">
+              <EngineDiagnosticPanel />
+            </div>
           </div>
         </section>
 
-        {/* SECTION 3: QUANTUM */}
-        <section className="min-h-screen flex flex-col justify-center items-start text-left bg-transparent pointer-events-none">
-          <div className="max-w-[600px] pointer-events-auto">
-            <span className="inline-block px-4 py-2 rounded-full bg-violet-600/10 border border-violet-600/20 text-[#7c3aed] text-[12px] font-semibold tracking-widest uppercase mb-6 backdrop-blur-md">
-              Hyper-dimensional
-            </span>
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold leading-[1.1] tracking-tight bg-gradient-to-b from-gray-900 to-gray-600 bg-clip-text text-transparent mb-4">
-              Decentralized<br />Consensus
-            </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-gray-700 leading-relaxed mb-8">
-              Securing trustless multi-agent operations across distributed peer layers with zero knowledge computation wrappers.
-            </p>
+        {/* SECTION 3: SYSTEM ARCHITECTURE GALAXY MAP */}
+        <section className="min-h-screen flex flex-col items-center justify-center bg-transparent pointer-events-none py-20">
+          <div className="w-11/12 mx-auto pointer-events-auto flex flex-col gap-10">
+            {/* Centered Introductory Text Details */}
+            <div className="flex flex-col items-center text-center space-y-4 max-w-[760px] mx-auto">
+              <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-600/10 border border-violet-600/20 text-[#7c3aed] text-[12px] font-semibold tracking-widest uppercase backdrop-blur-md">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#7c3aed] animate-pulse" />
+                Orchestration Blueprint
+              </span>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.08] tracking-tight bg-gradient-to-b from-gray-950 to-gray-700 bg-clip-text text-transparent">
+                Unified Core Architecture Flow
+              </h2>
+              <p className="text-base sm:text-lg text-black/75 leading-[1.65]">
+                atlash.ai operates as a fully integrated ecosystem of core repository modules. 
+                Hover over the constellation nodes below to see how our systems communicate, 
+                what technologies power each layer, and where they deploy!
+              </p>
+            </div>
+
+            {/* Immersive Galaxy Constellation Map */}
+            <div className="w-full">
+              <RepositoryGalaxyMap />
+            </div>
           </div>
         </section>
+
+        {/* Sleek Minimalist Footer */}
+        <footer className="w-full border-t border-black/5 pt-8 pb-16 mt-20 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto">
+          <div className="flex flex-col items-center sm:items-start gap-1">
+            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/45 select-none">
+              © 2026 atlash.ai. All rights reserved.
+            </span>
+            <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/35">
+              Developed by <span className="text-black/60 font-semibold hover:text-[#7c3aed] transition-colors cursor-pointer">Anthic Kumar Singh</span>
+            </span>
+          </div>
+          <div className="flex items-center gap-4">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] animate-pulse" />
+            <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-black/45 select-none">
+              Platform Status: Optimized
+            </span>
+          </div>
+        </footer>
 
       </div>
 
@@ -134,4 +187,3 @@ export default function HomePage() {
     </main>
   );
 }
-
