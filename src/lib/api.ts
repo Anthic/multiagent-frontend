@@ -2,7 +2,6 @@
 
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { ApiError, ApiResponse } from "../types/api";
-import { useAuthStore } from "../store/authStore";
 
 
 const API_BASED_URL=process.env.NEXT_PUBLIC_API_BASE_URL
@@ -54,6 +53,16 @@ const processQueue=(error : Error | null)=>{
   failedQueue=[]
 }
 
+const shouldSkipRefresh = (url?: string) => {
+  if (!url) return false;
+
+  return [
+    '/auth/login',
+    '/auth/register',
+    '/auth/refresh-token',
+  ].some((authPath) => url.includes(authPath));
+}
+
 
 // core client 
  const createAxiosInstance = (): AxiosInstance =>{
@@ -88,7 +97,11 @@ instance.interceptors.response.use(
       const original = error.config as RetryableRequest;
 
 
-      if (error.response?.status === 401 && !original?._retry) {
+      if (
+        error.response?.status === 401 &&
+        !original?._retry &&
+        !shouldSkipRefresh(original?.url)
+      ) {
         if (isRefreshing) {
       
           return new Promise((resolve, reject) => {

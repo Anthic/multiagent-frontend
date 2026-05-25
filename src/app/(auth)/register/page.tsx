@@ -6,13 +6,15 @@ import Particles, { initParticlesEngine } from "@tsparticles/react";
 import { loadSlim } from "@tsparticles/slim";
 import gsap from "gsap";
 import Link from "next/link";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { useRegister } from "../../../hooks/useAuth";
+import { bootstrapCsrfToken } from "../../../lib/csrf";
 import { ApiError } from "../../../types/api";
 import { registerSchema } from "@/src/validation/registerSchema";
 import z from "zod";
+import { queueAppToast, showAppToast } from "../../../components/ui/AppToast";
 
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -52,6 +54,8 @@ const RegistrationPage = () => {
   const [init, setInit] = useState(false);
   const [lottieData, setLottieData] = useState<unknown>(null);
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -62,13 +66,42 @@ const RegistrationPage = () => {
 
   const { mutate: register, isPending } = useRegister();
 
+  useEffect(() => {
+    bootstrapCsrfToken();
+  }, []);
+
   const {
+    control,
     register: formRegister,
     handleSubmit,
     formState: { errors },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
   });
+
+  const passwordValue =
+    useWatch({
+      control,
+      name: "password",
+    }) ?? "";
+  const passwordChecks = [
+    {
+      label: "At least 8 characters",
+      passed: passwordValue.length >= 8,
+    },
+    {
+      label: "One uppercase letter",
+      passed: /[A-Z]/.test(passwordValue),
+    },
+    {
+      label: "One number",
+      passed: /[0-9]/.test(passwordValue),
+    },
+    {
+      label: "One special character",
+      passed: /[^A-Za-z0-9]/.test(passwordValue),
+    },
+  ];
 
   // ── Particles ──────────────────────────────────────────────────
   useEffect(() => {
@@ -138,29 +171,53 @@ const RegistrationPage = () => {
   }, []);
 
   // ── Submit ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!serverError || !cardRef.current) return;
+
+    gsap.fromTo(
+      cardRef.current,
+      { x: -8 },
+      {
+        x: 0,
+        duration: 0.4,
+        ease: "elastic.out(1, 0.3)",
+      }
+    );
+  }, [serverError]);
+
   const onSubmit = ({ name, email, password }: RegisterFormData) => {
     setServerError(null);
     
     register(
       { name, email, password },
       {
+        onSuccess: () => {
+          queueAppToast({
+            type: "success",
+            title: "Account created",
+            message: "Your research workspace is ready. Sign in to continue.",
+          });
+        },
         onError: (error: ApiError) => {
           setServerError(error.message);
-        
-          if (cardRef.current) {
-            gsap.fromTo(
-              cardRef.current,
-              { x: -8 },
-              {
-                x: 0,
-                duration: 0.4,
-                ease: "elastic.out(1, 0.3)",
-              }
-            );
-          }
+          showAppToast({
+            type: "error",
+            title: "Registration failed",
+            message:
+              error.message ||
+              "We could not create your account. Please check the details and try again.",
+          });
         },
       }
     );
+  };
+
+  const onInvalid = () => {
+    showAppToast({
+      type: "info",
+      title: "Complete the form",
+      message: "Fill every field and make sure the password meets all requirements.",
+    });
   };
 
   return (
@@ -221,7 +278,7 @@ const RegistrationPage = () => {
           </p>
 
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
             className="space-y-4"
             noValidate
           >
@@ -233,7 +290,22 @@ const RegistrationPage = () => {
             )}
 
             {/* Fields */}
-            {fields.map(({ id, label, type, placeholder, autoComplete }, i) => (
+            {fields.map(({ id, label, type, placeholder, autoComplete }, i) => {
+              const isPasswordField = id === "password";
+              const isConfirmPasswordField = id === "confirmPassword";
+              const isVisible = isPasswordField
+                ? showPassword
+                : isConfirmPasswordField
+                  ? showConfirmPassword
+                  : false;
+              const inputType =
+                isPasswordField || isConfirmPasswordField
+                  ? isVisible
+                    ? "text"
+                    : "password"
+                  : type;
+
+              return (
               <div
                 key={id}
                 ref={(el) => { fieldRefs.current[i] = el; }}
@@ -244,21 +316,69 @@ const RegistrationPage = () => {
                 >
                   {label}
                 </label>
-                <input
-                  id={id}
-                  type={type}
-                  autoComplete={autoComplete}
-                  placeholder={placeholder}
-                  {...formRegister(id)}
-                  className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+                <div className="relative">
+                  <input
+                    id={id}
+                    type={inputType}
+                    autoComplete={autoComplete}
+                    placeholder={placeholder}
+                    {...formRegister(id)}
+                    className={`w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      isPasswordField || isConfirmPasswordField ? "pr-12" : ""
+                    }`}
+                  />
+                  {(isPasswordField || isConfirmPasswordField) && (
+                    <button
+                      type="button"
+                      aria-label={isVisible ? "Hide password" : "Show password"}
+                      onClick={() => {
+                        if (isPasswordField) {
+                          setShowPassword((current) => !current);
+                          return;
+                        }
+
+                        setShowConfirmPassword((current) => !current);
+                      }}
+                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <span className="relative block h-4 w-6 rounded-full border border-current">
+                        <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
+                        {isVisible && (
+                          <span className="absolute left-1/2 top-1/2 h-[1px] w-7 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-current" />
+                        )}
+                      </span>
+                    </button>
+                  )}
+                </div>
+
+                {isPasswordField && (
+                  <div className="mt-3 grid grid-cols-1 gap-2 rounded-lg border border-white/10 bg-black/20 p-3 sm:grid-cols-2">
+                    {passwordChecks.map((check) => (
+                      <div
+                        key={check.label}
+                        className={`flex items-center gap-2 text-xs transition-colors ${
+                          check.passed ? "text-emerald-300" : "text-slate-500"
+                        }`}
+                      >
+                        <span
+                          className={`h-2 w-2 rounded-full ${
+                            check.passed ? "bg-emerald-300" : "bg-slate-600"
+                          }`}
+                        />
+                        <span>{check.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {errors[id] && (
                   <p className="mt-1 text-xs text-red-400">
                     {errors[id]?.message}
                   </p>
                 )}
               </div>
-            ))}
+              );
+            })}
 
             {/* Submit */}
             <button
@@ -286,13 +406,13 @@ const RegistrationPage = () => {
         {/* ── Right: Lottie ── */}
         <div className="relative hidden min-h-[520px] w-full items-center justify-center overflow-hidden bg-white/5 md:flex md:w-1/2">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 mix-blend-overlay" />
-          <div className="relative z-10 flex h-full w-full items-center justify-center">
+          <div className="relative z-10 flex h-full w-full items-center justify-center px-8 py-10">
             {lottieData ? (
               <Lottie
                 animationData={lottieData}
-                className="h-full w-full object-fill"
+                className="h-full max-h-[430px] w-full max-w-[420px] object-contain"
                 loop
-                rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
+                rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-gray-400">

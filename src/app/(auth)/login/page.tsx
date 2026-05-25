@@ -10,8 +10,10 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import Link from "next/link";
 import { useLogin } from "../../../hooks/useAuth";
+import { bootstrapCsrfToken } from "../../../lib/csrf";
 import { ApiError } from "../../../types/api";
 import { loginSchema } from "@/src/validation/loginSchema";
+import { queueAppToast, showAppToast } from "../../../components/ui/AppToast";
 
 
 
@@ -24,6 +26,10 @@ const LoginPage = () => {
   const cardRef = useRef<HTMLDivElement>(null);
 
   const { mutate: login, isPending } = useLogin();
+
+  useEffect(() => {
+    bootstrapCsrfToken();
+  }, []);
 
   const {
     register,
@@ -65,9 +71,31 @@ const LoginPage = () => {
   const onSubmit = (data: LoginFormData) => {
     setServerError(null);
     login(data, {
+      onSuccess: () => {
+        queueAppToast({
+          type: "success",
+          title: "Signed in",
+          message: "Welcome back. Your research dashboard is ready.",
+        });
+      },
       onError: (error: ApiError) => {
         setServerError(error.message);
+        showAppToast({
+          type: "error",
+          title: "Login failed",
+          message:
+            error.message ||
+            "We could not sign you in. Please check your email and password.",
+        });
       },
+    });
+  };
+
+  const onInvalid = () => {
+    showAppToast({
+      type: "info",
+      title: "Check your details",
+      message: "Enter a valid email and password before signing in.",
     });
   };
 
@@ -126,7 +154,7 @@ const LoginPage = () => {
           </p>
 
           <form
-            onSubmit={handleSubmit(onSubmit)}
+            onSubmit={handleSubmit(onSubmit, onInvalid)}
             className="space-y-5"
             noValidate
           >
@@ -208,13 +236,13 @@ const LoginPage = () => {
         {/* ── Right: Lottie panel ── */}
         <div className="relative hidden min-h-[520px] w-full items-center justify-center overflow-hidden bg-white/5 md:flex md:w-1/2">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 mix-blend-overlay" />
-          <div className="relative z-10 flex h-full w-full items-center justify-center">
+          <div className="relative z-10 flex h-full w-full items-center justify-center px-8 py-10">
             {lottieData ? (
               <Lottie
                 animationData={lottieData}
-                className="h-full w-full"
+                className="h-full max-h-[430px] w-full max-w-[420px] object-contain"
                 loop
-                rendererSettings={{ preserveAspectRatio: "xMidYMid slice" }}
+                rendererSettings={{ preserveAspectRatio: "xMidYMid meet" }}
               />
             ) : (
               <div className="flex h-full items-center justify-center text-gray-400">
