@@ -17,6 +17,7 @@ const authLinks = [
   { name: 'Research', href: '/research' },
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'About', href: '/about' },
+
 ];
 
 export const Navbar = () => {

@@ -34,10 +34,10 @@ export const useJobStatus = (jobId : string |  null) => {
         const status = query.state.data?.data?.status
         if (status === 'done' || status === "failed") return false
 
-        return 2000
+        return 5000
       
     },
-    staleTime : 2000
+    staleTime : 5000
  })
 }
 

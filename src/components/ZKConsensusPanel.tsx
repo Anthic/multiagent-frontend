@@ -55,7 +55,7 @@ export function ZKConsensusPanel() {
         `[PEER-LAYER] Synced state verified across distributed nodes`
       ];
 
-      setLogs((prev) => [...prev, actions[Math.floor(Math.random() * actions.length)]]);
+      setLogs((prev) => [...prev, actions[Math.floor(Math.random() * actions.length)]].slice(-100));
     }, 3200);
 
     return () => clearInterval(interval);
@@ -77,7 +77,7 @@ export function ZKConsensusPanel() {
 
     steps.forEach((step) => {
       setTimeout(() => {
-        setLogs((prev) => [...prev, step.text]);
+        setLogs((prev) => [...prev, step.text].slice(-100));
         if (step.text.includes('[SUCCESS]')) {
           setVerificationSuccess(true);
           setIsVerifying(false);
@@ -208,7 +208,7 @@ export function ZKConsensusPanel() {
             else if (log.includes('[ZK-ENGINE]') || log.startsWith('[ZK-WRAPPER]')) textColor = 'text-[#d4a017] font-semibold';
 
             return (
-              <div key={index} className={`${textColor} break-words`}>
+              <div key={`log-${index}-${log.slice(0, 15)}`} className={`${textColor} break-words`}>
                 {log}
               </div>
             );

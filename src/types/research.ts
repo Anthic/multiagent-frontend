@@ -36,3 +36,11 @@ export interface PaginatedJobs {
   records: Job[];
   count: number;
 }
+
+export interface AgentVisualizerProps {
+  currentStage: string;
+  progress: number;
+  status: 'queued' | 'running' | 'done' | 'failed' | 'idle';
+  rewrittenQueries?: string[];
+  outlinePlan?: string;
+}

@@ -99,7 +99,7 @@ export function EngineDiagnosticPanel() {
     const cleanCmd = inputVal.trim().toLowerCase();
     if (!cleanCmd) return;
 
-    setLogs((prev) => [...prev, `> ${inputVal}`]);
+    setLogs((prev) => [...prev, `> ${inputVal}`].slice(-100));
     setInputVal('');
 
     // Remove leading slash if typed
@@ -119,7 +119,7 @@ export function EngineDiagnosticPanel() {
 
       response.forEach((logItem, idx) => {
         setTimeout(() => {
-          setLogs((prev) => [...prev, logItem.text]);
+          setLogs((prev) => [...prev, logItem.text].slice(-100));
         }, idx * 350);
       });
 
@@ -138,7 +138,7 @@ export function EngineDiagnosticPanel() {
       setLogs((prev) => [
         ...prev,
         `[ERROR] Unknown command: "${inputVal}". Type "/help" for system commands.`
-      ]);
+      ].slice(-100));
     }
   };
 
@@ -339,7 +339,7 @@ export function EngineDiagnosticPanel() {
             else if (log.startsWith('[ATLAS')) textColor = 'text-[#e2c174] font-semibold';
 
             return (
-              <div key={index} className={`${textColor} break-words`}>
+              <div key={`elog-${index}-${log.slice(0, 15)}`} className={`${textColor} break-words`}>
                 {log}
               </div>
             );
