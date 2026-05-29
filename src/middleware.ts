@@ -28,17 +28,22 @@ export function middleware(request: NextRequest) {
     pathname.startsWith(path)
   );
 
- 
+  // ── Unauthenticated → redirect to /login with callbackUrl ─────────────────
   if (isProtectedPath && !token) {
     const loginUrl = new URL('/login', request.url);
-  
-    loginUrl.searchParams.set('callbackUrl', pathname);
+    // Preserve full path + search so deep links round-trip correctly
+    const callback = pathname + request.nextUrl.search;
+    loginUrl.searchParams.set('callbackUrl', callback);
     return NextResponse.redirect(loginUrl);
   }
 
- 
+  // ── Already authenticated → bounce off auth pages ─────────────────────────
   if (isAuthPath && token) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Respect any callbackUrl they were trying to reach before being bounced
+    const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
+    const destination =
+      callbackUrl && callbackUrl.startsWith('/') ? callbackUrl : '/research';
+    return NextResponse.redirect(new URL(destination, request.url));
   }
 
   return NextResponse.next();

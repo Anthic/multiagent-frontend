@@ -65,7 +65,6 @@ export function useCurrentUser() {
 // useLogin
 // ─────────────────────────────────────────────────────────────────────────────
 export function useLogin() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { setUser, setLoading } = useAuthStore.getState();
 
@@ -80,8 +79,14 @@ export function useLogin() {
         setUser(user);
         queryClient.setQueryData(authQueryKeys.me, user);
       }
-      router.push('/');
-      router.refresh();
+
+      // Read the callbackUrl that middleware injected (e.g. /research, /dashboard)
+      // Use window.location.href for a hard redirect so that the middleware
+      // re-evaluates the auth cookie on the destination page.
+      const params = new URLSearchParams(window.location.search);
+      const callbackUrl = params.get('callbackUrl');
+      const destination = callbackUrl && callbackUrl.startsWith('/') ? callbackUrl : '/';
+      window.location.href = destination;
     },
 
     onError: (error: ApiError) => {
@@ -96,7 +101,6 @@ export function useLogin() {
 // useRegister
 // ─────────────────────────────────────────────────────────────────────────────
 export function useRegister() {
-  const router = useRouter();
   const queryClient = useQueryClient();
   const { setUser, setLoading } = useAuthStore.getState();
 
@@ -108,11 +112,18 @@ export function useRegister() {
     onSuccess: (res) => {
       const user = res.data?.user;
       if (user) {
+        // Registration already authenticates the user — store their session
+        // immediately so they land on the app, not the login page.
         setUser(user);
         queryClient.setQueryData(authQueryKeys.me, user);
       }
-      router.push('/login');
-      router.refresh();
+
+      // Hard redirect to research (or callbackUrl if one was set).
+      // Same rationale as useLogin — hard nav re-triggers middleware.
+      const params = new URLSearchParams(window.location.search);
+      const callbackUrl = params.get('callbackUrl');
+      const destination = callbackUrl && callbackUrl.startsWith('/') ? callbackUrl : '/research';
+      window.location.href = destination;
     },
 
     onError: (error: ApiError) => {
