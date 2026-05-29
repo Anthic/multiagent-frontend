@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Lottie from "lottie-react";
@@ -38,14 +38,14 @@ const fields = [
     id: "password" as const,
     label: "Password",
     type: "password",
-    placeholder: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢",
+    placeholder: "••••••••",
     autoComplete: "new-password",
   },
   {
     id: "confirmPassword" as const,
     label: "Confirm Password",
     type: "password",
-    placeholder: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢",
+    placeholder: "••••••••",
     autoComplete: "new-password",
   },
 ];
