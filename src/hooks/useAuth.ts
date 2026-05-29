@@ -75,9 +75,14 @@ export function useLogin() {
 
     onSuccess: (res) => {
       const user = res.data?.user;
+      const token = (res.data as any)?.accessToken;
       if (user) {
         setUser(user);
         queryClient.setQueryData(authQueryKeys.me, user);
+      }
+
+      if (token && typeof window !== 'undefined') {
+        document.cookie = `accessToken=${token}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
       }
 
       // Read the callbackUrl that middleware injected (e.g. /research, /dashboard)
@@ -111,11 +116,16 @@ export function useRegister() {
 
     onSuccess: (res) => {
       const user = res.data?.user;
+      const token = (res.data as any)?.accessToken;
       if (user) {
         // Registration already authenticates the user — store their session
         // immediately so they land on the app, not the login page.
         setUser(user);
         queryClient.setQueryData(authQueryKeys.me, user);
+      }
+
+      if (token && typeof window !== 'undefined') {
+        document.cookie = `accessToken=${token}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
       }
 
       // Hard redirect to research (or callbackUrl if one was set).
@@ -150,6 +160,9 @@ export function useLogout() {
     } finally {
       clearAuth();
       queryClient.clear();
+      if (typeof window !== 'undefined') {
+        document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+      }
       router.push('/login');
       router.refresh();
     }

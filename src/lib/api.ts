@@ -1,4 +1,4 @@
-﻿import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { ApiError, ApiResponse } from "../types/api";
 import { ensureCsrfToken, getCachedCsrfToken } from "./csrf";
 
@@ -119,7 +119,11 @@ const createAxiosInstance = (): AxiosInstance => {
           isRefreshing = true;
 
           try {
-            await instance.post('/auth/refresh-token');
+            const refreshRes = await instance.post('/auth/refresh-token');
+            const newToken = refreshRes.data?.data?.accessToken;
+            if (newToken && typeof window !== 'undefined') {
+              document.cookie = `accessToken=${newToken}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
+            }
             processQueue(null);
             return instance(original);
           } catch (refreshError) {
@@ -129,6 +133,7 @@ const createAxiosInstance = (): AxiosInstance => {
             useAuthStore.getState().clearAuth();
 
             if (typeof window !== 'undefined') {
+              document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
               window.location.href = '/login';
             }
 
@@ -142,6 +147,7 @@ const createAxiosInstance = (): AxiosInstance => {
           useAuthStore.getState().clearAuth();
 
           if (typeof window !== 'undefined') {
+            document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
             window.location.href = '/login';
           }
         }
