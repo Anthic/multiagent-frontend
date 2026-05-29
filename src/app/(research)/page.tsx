@@ -293,7 +293,7 @@ export default function ResearchPage() {
  
   return (
     <main
-      className="min-h-screen relative overflow-hidden flex flex-col"
+      className="min-h-screen relative flex flex-col"
       style={{
         backgroundColor: '#070709',
         backgroundImage: 'radial-gradient(at 0% 0%, #111115 0px, transparent 50%), radial-gradient(at 50% 0%, #0c0d12 0px, transparent 50%), radial-gradient(at 100% 0%, #161224 0px, transparent 50%)',
