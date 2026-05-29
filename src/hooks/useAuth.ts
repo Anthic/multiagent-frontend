@@ -119,31 +119,11 @@ export function useRegister() {
 
     onMutate: () => setLoading(true),
 
-    onSuccess: (res) => {
-      const user = res.data?.user;
-      const token = (res.data as any)?.accessToken;
-      const refreshToken = (res.data as any)?.refreshToken;
-      if (user) {
-        // Registration already authenticates the user — store their session
-        // immediately so they land on the app, not the login page.
-        setUser(user);
-        queryClient.setQueryData(authQueryKeys.me, user);
+    onSuccess: () => {
+      // Clean redirect to login page after successful registration
+      if (typeof window !== 'undefined') {
+        window.location.href = '/login?registered=true';
       }
-
-      if (token && typeof window !== 'undefined') {
-        document.cookie = `accessToken=${token}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
-      }
-
-      if (refreshToken && typeof window !== 'undefined') {
-        document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax; Secure`;
-      }
-
-      // Hard redirect to research (or callbackUrl if one was set).
-      // Same rationale as useLogin — hard nav re-triggers middleware.
-      const params = new URLSearchParams(window.location.search);
-      const callbackUrl = params.get('callbackUrl');
-      const destination = callbackUrl && callbackUrl.startsWith('/') ? callbackUrl : '/research';
-      window.location.href = destination;
     },
 
     onError: (error: ApiError) => {
