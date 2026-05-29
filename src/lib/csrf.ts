@@ -1,7 +1,14 @@
 ﻿'use client';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
-const csrfEndpoint = apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/csrf-token` : '';
+const apiPrefix = '/api/v1';
+
+const normalizeApiBaseUrl = (baseUrl: string): string => {
+  const trimmed = baseUrl.replace(/\/$/, '');
+  return trimmed.endsWith(apiPrefix) ? trimmed : `${trimmed}${apiPrefix}`;
+};
+
+const csrfEndpoint = apiBaseUrl ? `${normalizeApiBaseUrl(apiBaseUrl)}/csrf-token` : '';
 
 let csrfToken: string | null = null;
 let csrfTokenPromise: Promise<string | null> | null = null;

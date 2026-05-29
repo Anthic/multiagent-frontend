@@ -3,7 +3,15 @@ import { ApiError, ApiResponse } from "../types/api";
 import { ensureCsrfToken, getCachedCsrfToken } from "./csrf";
 
 const API_BASED_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_PREFIX = '/api/v1';
 const CSRF_COOKIE_NAME = 'csrf_token';
+
+const normalizeApiBaseUrl = (baseUrl?: string): string | undefined => {
+  if (!baseUrl) return undefined;
+
+  const trimmed = baseUrl.replace(/\/$/, '');
+  return trimmed.endsWith(API_PREFIX) ? trimmed : `${trimmed}${API_PREFIX}`;
+};
 
 type RetryableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 
@@ -71,7 +79,7 @@ const shouldSkipRefresh = (url?: string) => {
 // core client 
 const createAxiosInstance = (): AxiosInstance => {
   const instance = axios.create({
-    baseURL: API_BASED_URL,
+    baseURL: normalizeApiBaseUrl(API_BASED_URL),
     withCredentials: true,
     headers: {
       'Content-Type': 'application/json',
