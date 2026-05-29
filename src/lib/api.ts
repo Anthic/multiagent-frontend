@@ -95,6 +95,26 @@ const createAxiosInstance = (): AxiosInstance => {
         const csrf = getCsrfToken() ?? await ensureCsrfToken();
         if (csrf) config.headers['x-csrf-token'] = csrf;
       }
+
+      if (typeof window !== 'undefined') {
+        const token = document.cookie
+          .split(';')
+          .map((c) => c.trim().split('='))
+          .find(([name]) => name === 'accessToken')?.[1];
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${decodeURIComponent(token)}`;
+        }
+
+        if (config.url?.includes('/auth/refresh-token')) {
+          const refreshTokenValue = document.cookie
+            .split(';')
+            .map((c) => c.trim().split('='))
+            .find(([name]) => name === 'refreshToken')?.[1];
+          if (refreshTokenValue) {
+            config.headers['x-refresh-token'] = decodeURIComponent(refreshTokenValue);
+          }
+        }
+      }
       return config;
     },
     (error) => Promise.reject(error)
@@ -121,8 +141,12 @@ const createAxiosInstance = (): AxiosInstance => {
           try {
             const refreshRes = await instance.post('/auth/refresh-token');
             const newToken = refreshRes.data?.data?.accessToken;
+            const newRefreshToken = refreshRes.data?.data?.refreshToken;
             if (newToken && typeof window !== 'undefined') {
               document.cookie = `accessToken=${newToken}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
+            }
+            if (newRefreshToken && typeof window !== 'undefined') {
+              document.cookie = `refreshToken=${newRefreshToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax; Secure`;
             }
             processQueue(null);
             return instance(original);
@@ -134,6 +158,7 @@ const createAxiosInstance = (): AxiosInstance => {
 
             if (typeof window !== 'undefined') {
               document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+              document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
               window.location.href = '/login';
             }
 
@@ -148,6 +173,7 @@ const createAxiosInstance = (): AxiosInstance => {
 
           if (typeof window !== 'undefined') {
             document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+            document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
             window.location.href = '/login';
           }
         }
