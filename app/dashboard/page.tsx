@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { Navbar } from '@/src/components/Navbar';
@@ -147,15 +147,15 @@ export default function DashboardPage() {
       <Navbar />
 
       {/* Decorative background glow elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-emerald-100/30 blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-amber-100/30 blur-[120px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-10%] size-[50vw] rounded-full bg-emerald-100/30 blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-10%] size-[50vw] rounded-full bg-amber-100/30 blur-[120px] pointer-events-none" />
 
       <div className="relative z-10 w-11/12 max-w-7xl mx-auto pt-32">
         {/* Header section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 border border-black/10 text-black/60 text-[10px] font-bold tracking-[0.2em] uppercase mb-4 backdrop-blur-md">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#34D399]" />
+              <span className="size-1.5 rounded-full bg-[#34D399]" />
               Researcher Control Hub
             </span>
             <h1 className="font-metamorphous text-4xl sm:text-5xl lg:text-6xl font-light text-[#11100d] leading-none tracking-tight">
@@ -172,7 +172,7 @@ export default function DashboardPage() {
             className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-6 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_15px_35px_rgba(0,0,0,0.15)] transition-transform duration-300 hover:-translate-y-0.5"
           >
             <span>New Research Run</span>
-            <span className="relative flex h-6 w-6 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1">
+            <span className="relative flex size-6 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1">
               &gt;
             </span>
           </TransitionLink>
@@ -449,19 +449,19 @@ export default function DashboardPage() {
                 className="w-full bg-white/50 border border-black/10 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-emerald-600/50 focus:ring-1 focus:ring-emerald-600/20 backdrop-blur-md transition-all font-roboto"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-black/30 text-xs pointer-events-none">
-                🔍
+                ðŸ”
               </span>
             </div>
           </div>
 
           {loading ? (
             <div className="flex flex-col items-center justify-center py-20 text-black/45">
-              <div className="w-10 h-10 border-4 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin mb-4" />
-              <span className="font-mono text-xs tracking-widest uppercase">Decrypted cache register...</span>
+              <div className="size-10 border-4 border-emerald-600/30 border-t-emerald-600 rounded-full animate-spin mb-4" />
+              <span className="font-mono text-xs tracking-widest uppercase">Decrypted cache register…</span>
             </div>
           ) : filteredHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <span className="text-5xl mb-4">🧭</span>
+              <span className="text-5xl mb-4">ðŸ§­</span>
               <h3 className="font-metamorphous text-xl font-bold text-black/80 mb-2">No Records Found</h3>
               <p className="font-roboto text-sm text-black/50 max-w-sm mb-6">
                 {searchQuery

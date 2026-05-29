@@ -1,19 +1,52 @@
-'use client';
+﻿'use client';
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL ?? '';
+const csrfEndpoint = apiBaseUrl ? `${apiBaseUrl.replace(/\/$/, '')}/csrf-token` : '';
+
+let csrfToken: string | null = null;
+let csrfTokenPromise: Promise<string | null> | null = null;
+
+type CsrfResponse = {
+  data?: {
+    csrfToken?: string;
+  };
+};
+
+export function getCachedCsrfToken() {
+  return csrfToken;
+}
 
 export async function bootstrapCsrfToken() {
   if (!apiBaseUrl) return;
 
-  const backendOrigin = apiBaseUrl.replace(/\/api\/v1\/?$/, '');
-
-  try {
-    await fetch(backendOrigin || apiBaseUrl, {
-      method: 'GET',
-      credentials: 'include',
-      cache: 'no-store',
-    });
-  } catch {
-    // CSRF bootstrap should never block the auth UI.
+  if (csrfTokenPromise) {
+    await csrfTokenPromise;
+    return;
   }
+
+  csrfTokenPromise = fetch(csrfEndpoint, {
+    method: 'GET',
+    credentials: 'include',
+    cache: 'no-store',
+  })
+    .then(async (response) => {
+      if (!response.ok) return null;
+
+      const payload = (await response.json()) as CsrfResponse;
+      csrfToken = payload.data?.csrfToken ?? null;
+      return csrfToken;
+    })
+    .catch(() => null)
+    .finally(() => {
+      csrfTokenPromise = null;
+    });
+
+  await csrfTokenPromise;
+}
+
+export async function ensureCsrfToken() {
+  if (csrfToken) return csrfToken;
+
+  await bootstrapCsrfToken();
+  return csrfToken;
 }

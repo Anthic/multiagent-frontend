@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -121,9 +121,9 @@ export function RepositoryGalaxyMap() {
       
       {/* Dynamic Cosmic Space Nebula Glows */}
       <div className="absolute inset-0 pointer-events-none opacity-50 mix-blend-screen">
-        <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] rounded-full bg-[#a855f7]/10 blur-[100px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-[350px] h-[350px] rounded-full bg-[#f59e0b]/10 blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full bg-[#06b6d4]/10 blur-[140px]" />
+        <div className="absolute top-1/4 left-1/4 size-[300px] rounded-full bg-[#a855f7]/10 blur-[100px]" />
+        <div className="absolute bottom-1/4 right-1/4 size-[350px] rounded-full bg-[#f59e0b]/10 blur-[120px]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-[450px] rounded-full bg-[#06b6d4]/10 blur-[140px]" />
       </div>
 
       {/* Grid Pattern Overlay */}
@@ -151,7 +151,7 @@ export function RepositoryGalaxyMap() {
       {/* TITLE HEADER */}
       <div className="relative z-10 flex flex-col items-center text-center gap-3 max-w-[800px] mx-auto border-b border-white/5 pb-5">
         <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/20 text-[#f59e0b] text-[10px] font-mono tracking-widest uppercase select-none">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#f59e0b] animate-ping" />
+          <span className="size-1.5 rounded-full bg-[#f59e0b] animate-ping" />
           Interactive System Telemetry HUD
         </span>
         <h3 className="font-audiowide text-xl md:text-2xl text-white tracking-[0.08em] uppercase">
@@ -292,7 +292,7 @@ export function RepositoryGalaxyMap() {
                 exit={{ opacity: 0, scale: 0.98 }}
                 className="flex-grow rounded-2xl border border-white/[0.04] bg-[#131211]/30 p-6 flex flex-col items-center justify-center text-center gap-4 h-full"
               >
-                <div className="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5">
+                <div className="size-12 rounded-full border border-white/10 flex items-center justify-center bg-white/5">
                   <span className="text-gray-400 font-mono text-xs animate-pulse">HUD</span>
                 </div>
                 <h4 className="font-audiowide text-sm uppercase tracking-[0.2em] text-white/50">
@@ -315,7 +315,7 @@ export function RepositoryGalaxyMap() {
                 {/* HUD Header */}
                 <div className="flex items-center justify-between border-b border-white/10 pb-3 flex-shrink-0">
                   <div className="flex items-center gap-2.5">
-                    <span className="w-2.5 h-2.5 rounded-full animate-ping" style={{ backgroundColor: activeNode.color }} />
+                    <span className="size-2.5 rounded-full animate-ping" style={{ backgroundColor: activeNode.color }} />
                     <span className="font-mono text-[15px] md:text-[17px] font-extrabold uppercase tracking-widest text-white">
                       {activeNode.name}
                     </span>

@@ -1,4 +1,4 @@
-import { AtlasHeadSceneWrapper } from '@/src/components/3d/AtlasHeadSceneWrapper';
+﻿import { AtlasHeadSceneWrapper } from '@/src/components/3d/AtlasHeadSceneWrapper';
 import { AnimatedDescriptionText } from '@/src/components/AnimatedDescriptionText';
 import { Navbar } from '@/src/components/Navbar';
 import { EngineDiagnosticPanel } from '@/src/components/EngineDiagnosticPanel';
@@ -47,7 +47,7 @@ export default function HomePage() {
           <div className="grid min-h-screen items-center gap-10 pt-24 lg:grid-cols-[minmax(0,1fr)_minmax(360px,430px)]">
             <div className="max-w-[720px] pointer-events-auto">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/5 border border-black/10 text-black/70 text-[12px] font-semibold tracking-[0.24em] uppercase mb-7 backdrop-blur-md">
-                <span className="h-2 w-2 rounded-full bg-[#AAFFC7] shadow-[0_0_18px_rgba(170,255,199,0.95)]" />
+                <span className="size-2 rounded-full bg-[#AAFFC7] shadow-[0_0_18px_rgba(170,255,199,0.95)]" />
                 <span className="font-imperial text-[24px] normal-case tracking-normal leading-none">atlash.ai</span>
               </span>
               <h1 className="font-metamorphous text-[clamp(42px,7.8vw,104px)] leading-[0.98] tracking-normal text-[#11100d] mb-7 max-w-[760px] ">
@@ -57,10 +57,10 @@ export default function HomePage() {
                 atlash.ai builds modern agent-powered web systems that can think through tasks,
                 automate complex workflows, and turn ideas into intelligent digital experiences.
               </p>
-              <button className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition-transform duration-300 hover:-translate-y-1">
+              <button type="button" className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition-transform duration-300 hover:-translate-y-1">
                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/18 to-white/0 -translate-x-full transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative">Explore More</span>
-                <span className="relative flex h-7 w-7 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1">
+                <span className="relative flex size-7 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1">
                   &gt;
                 </span>
               </button>
@@ -99,7 +99,7 @@ export default function HomePage() {
             {/* Text Description Left Column */}
             <div className="flex flex-col items-start text-left space-y-6 max-w-[540px]">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-amber-600/10 border border-amber-600/20 text-amber-800 text-[12px] font-semibold tracking-widest uppercase backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#d4a017] animate-pulse" />
+                <span className="size-1.5 rounded-full bg-[#d4a017] animate-pulse" />
                 Engine Layer
               </span>
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.08] tracking-tight bg-gradient-to-b from-gray-950 to-gray-700 bg-clip-text text-transparent">
@@ -136,7 +136,7 @@ export default function HomePage() {
             {/* Centered Introductory Text Details */}
             <div className="flex flex-col items-center text-center space-y-4 max-w-[760px] mx-auto">
               <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-600/10 border border-violet-600/20 text-[#7c3aed] text-[12px] font-semibold tracking-widest uppercase backdrop-blur-md">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#7c3aed] animate-pulse" />
+                <span className="size-1.5 rounded-full bg-[#7c3aed] animate-pulse" />
                 Orchestration Blueprint
               </span>
               <h2 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-[1.08] tracking-tight bg-gradient-to-b from-gray-950 to-gray-700 bg-clip-text text-transparent">
@@ -160,14 +160,14 @@ export default function HomePage() {
         <footer className="w-full border-t border-black/5 pt-8 pb-16 mt-20 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto">
           <div className="flex flex-col items-center sm:items-start gap-1">
             <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/45 select-none">
-              © 2026 atlash.ai. All rights reserved.
+              Â© 2026 atlash.ai. All rights reserved.
             </span>
             <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/35">
               Developed by <span className="text-black/60 font-semibold hover:text-[#7c3aed] transition-colors cursor-pointer">Anthic Kumar Singh</span>
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#10b981] animate-pulse" />
+            <span className="size-1.5 rounded-full bg-[#10b981] animate-pulse" />
             <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-black/45 select-none">
               Platform Status: Optimized
             </span>

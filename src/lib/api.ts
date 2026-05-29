@@ -1,5 +1,6 @@
-import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
+﻿import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from "axios";
 import { ApiError, ApiResponse } from "../types/api";
+import { ensureCsrfToken, getCachedCsrfToken } from "./csrf";
 
 const API_BASED_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const CSRF_COOKIE_NAME = 'csrf_token';
@@ -10,7 +11,7 @@ type RetryableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
 export const getCsrfToken = (): string | null => {
   // make the server side rendering safe
   if (typeof document === "undefined") {
-    return null;
+    return getCachedCsrfToken();
   }
 
   const cookie = document.cookie
@@ -18,7 +19,13 @@ export const getCsrfToken = (): string | null => {
     .map((c) => c.trim().split('='))
     .find(([name]) => name === CSRF_COOKIE_NAME);
 
-  return cookie ? decodeURIComponent(cookie[1]) : null;
+  if (!cookie) return getCachedCsrfToken();
+
+  try {
+    return decodeURIComponent(cookie[1]);
+  } catch {
+    return getCachedCsrfToken();
+  }
 };
 
 // handle error normalized
@@ -28,6 +35,7 @@ export const normalizeError = (error: AxiosError): ApiError => {
     message: raw?.message ?? error.message ?? 'An unexpected error occurred',
     statusCode: error.response?.status ?? 0,
     errors: raw?.errors,
+    data: raw?.data,
   };
 };
 
@@ -73,10 +81,10 @@ const createAxiosInstance = (): AxiosInstance => {
 
   // request attach-csrf token and bearer Token
   instance.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => {
+    async (config: InternalAxiosRequestConfig) => {
       const unsafeMethods = ['post', 'put', 'patch', 'delete'];
       if (config.method && unsafeMethods.includes(config.method.toLowerCase())) {
-        const csrf = getCsrfToken();
+        const csrf = getCsrfToken() ?? await ensureCsrfToken();
         if (csrf) config.headers['x-csrf-token'] = csrf;
       }
       return config;

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { AgentVisualizerProps } from '@/src/types/research';
 import React from 'react';
@@ -25,7 +25,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Planner',
       desc: 'Decomposing topic & drafting outline',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
         </svg>
       ),
@@ -35,7 +35,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Searcher',
       desc: 'Executing parallel multi-query web indexer',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       ),
@@ -45,7 +45,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Reader',
       desc: 'Scraping and downloading core source links',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
       ),
@@ -55,7 +55,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Summarizer',
       desc: 'Condensing and cleaning web texts',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h7" />
         </svg>
       ),
@@ -65,7 +65,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'RAG Retriever',
       desc: 'Executing vector index semantic matches',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>
       ),
@@ -75,7 +75,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Writer',
       desc: 'Synthesizing comprehensive research report',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
         </svg>
       ),
@@ -85,7 +85,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Fact Checker',
       desc: 'Validating claims against primary sources',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
         </svg>
       ),
@@ -95,7 +95,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Critic Agent',
       desc: 'Scoring quality and directing rewrite loops',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
         </svg>
       ),
@@ -105,7 +105,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
       label: 'Knowledge Graph',
       desc: 'Constructing dynamic concept semantic links',
       icon: (
-        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
         </svg>
       ),
@@ -148,7 +148,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
     <div className="flex flex-col gap-4 bg-white/40 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-black/5 dark:border-white/5 p-4 md:p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <h3 className="font-audiowide text-sm font-bold text-[#11100d] dark:text-white uppercase tracking-tight flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+          <span className="size-2 rounded-full bg-emerald-500 animate-ping" />
           MULTI-AGENT PIPELINE
         </h3>
         <span className="font-mono text-[8px] md:text-[9px] text-black/50 dark:text-white/45 bg-black/5 dark:bg-white/5 px-2 py-0.5 rounded-full uppercase tracking-wider font-bold">
@@ -212,7 +212,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
               )}
 
               <div
-                className={`w-9 h-9 flex items-center justify-center rounded-full border-2 transition-all duration-300 z-10 shrink-0 ${stateColor}`}
+                className={`size-9 flex items-center justify-center rounded-full border-2 transition-all duration-300 z-10 shrink-0 ${stateColor}`}
                 style={glowStyle}
               >
                 <div className="scale-90 flex items-center justify-center">{node.icon}</div>
@@ -235,7 +235,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
         <div className="mt-2 p-4 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl flex flex-col gap-3 font-mono text-[11px] leading-relaxed">
           {rewrittenQueries.length > 0 && activeIndex >= 1 && (
             <div className="flex flex-col gap-1">
-              <span className="text-[#67C090] font-bold uppercase tracking-wider">➔ Searcher expanded queries:</span>
+              <span className="text-[#67C090] font-bold uppercase tracking-wider">âž” Searcher expanded queries:</span>
               <ul className="list-inside list-disc pl-2 text-black/75 dark:text-white/70 flex flex-col gap-0.5">
                 {rewrittenQueries.map((q, idx) => (
                   <li key={`q-${idx}-${q.slice(0, 12)}`} className="truncate">"{q}"</li>
@@ -246,7 +246,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
           {outlinePlan && activeIndex >= 0 && (
             <div className="flex flex-col gap-1 max-h-48 overflow-y-auto border-t border-black/5 dark:border-white/5 pt-2">
-              <span className="text-[#67C090] font-bold uppercase tracking-wider">➔ Decomposed blueprint plan:</span>
+              <span className="text-[#67C090] font-bold uppercase tracking-wider">âž” Decomposed blueprint plan:</span>
               <pre className="text-black/70 dark:text-white/60 whitespace-pre-wrap pl-2 leading-tight">
                 {outlinePlan}
               </pre>

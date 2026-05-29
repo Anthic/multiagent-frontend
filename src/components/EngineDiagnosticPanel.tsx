@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -152,18 +152,18 @@ export function EngineDiagnosticPanel() {
       {/* PANEL TITLE BAR */}
       <div className="flex items-center justify-between border-b border-black/5 pb-4">
         <div className="flex items-center gap-3">
-          <span className="relative flex h-3 w-3">
+          <span className="relative flex size-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#10b981]"></span>
+            <span className="relative inline-flex rounded-full size-3 bg-[#10b981]"></span>
           </span>
           <span className="font-audiowide text-sm tracking-[0.15em] uppercase text-black/70">
             Atlas Diagnostic Console
           </span>
         </div>
         <div className="flex gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
-          <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
-          <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
+          <span className="size-2.5 rounded-full bg-black/10" />
+          <span className="size-2.5 rounded-full bg-black/10" />
+          <span className="size-2.5 rounded-full bg-black/10" />
         </div>
       </div>
 
@@ -353,6 +353,7 @@ export function EngineDiagnosticPanel() {
         >
           <span className="font-mono text-[12px] text-[#AAFFC7] font-bold mr-1.5 select-none">{`>`}</span>
           <input
+            aria-label="Diagnostic command"
             type="text"
             className="flex-grow bg-transparent text-[11px] font-mono text-white outline-none border-none placeholder-gray-600 caret-[#AAFFC7]"
             placeholder="Type /search, /synthesize, /optimize, or /help..."

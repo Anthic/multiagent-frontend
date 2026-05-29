@@ -1,35 +1,18 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-
-type ToastType = 'success' | 'error' | 'info';
-
-type ToastPayload = {
-  type: ToastType;
-  title: string;
-  message: string;
-};
-
-const TOAST_EVENT = 'app-toast';
-const QUEUED_TOAST_KEY = 'app-queued-toast';
+import {
+  QUEUED_TOAST_KEY,
+  TOAST_EVENT,
+  ToastPayload,
+  ToastType,
+} from './appToastEvents';
 
 const typeStyles: Record<ToastType, string> = {
   success: 'border-[#AAFFC7]/40 bg-[#AAFFC7]/12 text-[#AAFFC7]',
   error: 'border-red-400/40 bg-red-500/12 text-red-200',
   info: 'border-sky-300/40 bg-sky-500/12 text-sky-100',
 };
-
-export function showAppToast(payload: ToastPayload) {
-  if (typeof window === 'undefined') return;
-
-  window.dispatchEvent(new CustomEvent<ToastPayload>(TOAST_EVENT, { detail: payload }));
-}
-
-export function queueAppToast(payload: ToastPayload) {
-  if (typeof window === 'undefined') return;
-
-  sessionStorage.setItem(QUEUED_TOAST_KEY, JSON.stringify(payload));
-}
 
 export function AppToast() {
   const [toast, setToast] = useState<ToastPayload | null>(null);
@@ -76,7 +59,7 @@ export function AppToast() {
       >
         <div className="border-b border-white/10 bg-[#0f0f1a]/92 px-5 py-4">
           <div className="flex items-start gap-3">
-            <span className="mt-1 h-2.5 w-2.5 rounded-full bg-current shadow-[0_0_18px_currentColor]" />
+            <span className="mt-1 size-2.5 rounded-full bg-current shadow-[0_0_18px_currentColor]" />
             <div>
               <p className="text-sm font-semibold tracking-wide text-white">
                 {toast.title}
@@ -91,18 +74,6 @@ export function AppToast() {
           <div className="h-full w-full animate-[toastProgress_4.2s_linear_forwards] bg-current" />
         </div>
       </div>
-      <style jsx>{`
-        @keyframes toastProgress {
-          from {
-            transform: scaleX(1);
-            transform-origin: left;
-          }
-          to {
-            transform: scaleX(0);
-            transform-origin: left;
-          }
-        }
-      `}</style>
     </div>
   );
 }

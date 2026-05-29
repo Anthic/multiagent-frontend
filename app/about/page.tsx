@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { Navbar } from '@/src/components/Navbar';
@@ -20,37 +20,37 @@ export default function AboutPage() {
   const agents = [
     {
       title: 'Query Rewriter Agent',
-      icon: '🧠',
+      icon: 'ðŸ§ ',
       role: 'Statistical expansion & target alignment',
       desc: 'Takes the raw research prompt and expands it into multiple optimized, statistically rich search queries. It filters out ambiguity and structures queries to harvest the highest density of relevant results.',
     },
     {
       title: 'Searcher Agent',
-      icon: '🌐',
+      icon: 'ðŸŒ',
       role: 'Cross-origin telemetry harvesting',
       desc: 'Executes parallel searches across the web, fetching raw results from trusted scientific journals, verified databases, and official publications. Powered by statistical relevancy indexing.',
     },
     {
       title: 'Reader & Scraper Agent',
-      icon: '📖',
+      icon: 'ðŸ“–',
       role: 'Semantic text parsing & noise filtration',
       desc: 'Scrapes live web content, cleans HTML fluff, and extracts deep semantic context. It isolates target knowledge and structures raw text into cohesive information vectors.',
     },
     {
       title: 'Fact-Checking Agent',
-      icon: '🛡️',
+      icon: 'ðŸ›¡ï¸',
       role: 'Claim validation & source cross-referencing',
       desc: 'Acts as the ultimate truth gatekeeper. It cross-checks parsed data against verified medical and scientific publications to assign a precise Fact-Check Trust Percentage.',
     },
     {
       title: 'Critique & Grading Agent',
-      icon: '📊',
+      icon: 'ðŸ“Š',
       role: 'Strict quality assurance grading',
       desc: 'Grades the accumulated research according to rigorous statistical criteria. Evaluates the depth, source variety, and factual alignment, outputting a precise 0-10 Quality score.',
     },
     {
       title: 'Writer & Synthesis Agent',
-      icon: '✍️',
+      icon: 'âœï¸',
       role: 'Academic markdown generation',
       desc: 'Synthesizes the finalized, grade-verified data into a comprehensive, beautifully structured research workspace report. Complete with proper source citations and formatting.',
     },
@@ -68,15 +68,15 @@ export default function AboutPage() {
       <Navbar />
 
       {/* Decorative background glows */}
-      <div className="absolute top-[-10%] left-[-15%] w-[60vw] h-[60vw] rounded-full bg-emerald-100/30 blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-15%] w-[60vw] h-[60vw] rounded-full bg-amber-100/30 blur-[130px] pointer-events-none" />
+      <div className="absolute top-[-10%] left-[-15%] size-[60vw] rounded-full bg-emerald-100/30 blur-[130px] pointer-events-none" />
+      <div className="absolute bottom-[-10%] right-[-15%] size-[60vw] rounded-full bg-amber-100/30 blur-[130px] pointer-events-none" />
 
       <div className="relative z-10 w-11/12 max-w-7xl mx-auto pt-32">
         
         {/* Title / Hero section */}
         <div className="max-w-3xl mb-16">
           <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-800/10 border border-emerald-800/20 text-emerald-800 text-[10px] font-bold tracking-[0.2em] uppercase mb-4 backdrop-blur-md">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#059669]" />
+            <span className="size-1.5 rounded-full bg-[#059669]" />
             Deep Tech Intelligence Platform
           </span>
           <h1 className="font-metamorphous text-4xl sm:text-5xl lg:text-6xl font-light text-[#11100d] leading-none tracking-tight">
@@ -137,7 +137,7 @@ export default function AboutPage() {
                 href="mailto:anthickumarsingh2@gmail.com" 
                 className="flex items-center gap-2 hover:text-emerald-800 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-emerald-800/80">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4 text-emerald-800/80">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75" />
                 </svg>
                 anthickumarsingh2@gmail.com
@@ -146,7 +146,7 @@ export default function AboutPage() {
                 href="tel:+8801717182035" 
                 className="flex items-center gap-2 hover:text-emerald-800 transition-colors"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 text-emerald-800/80">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="size-4 text-emerald-800/80">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.622c0-1.03.945-1.74 1.983-1.428l2.235.67a1.5 1.5 0 0 1 1.012 1.344v.952c0 .548-.444.992-.992.992H5.161c-.55 0-1 .45-1 1v.082c0 .248.016.495.048.74c.241 1.834 1.036 3.518 2.203 4.908l.004.005a9.018 9.018 0 0 0 3.256 2.502l.005.003c.516.24 1.074.364 1.644.364h.016c.55 0 1-.45 1-1v-1.124A1.5 1.5 0 0 1 14.887 13.9l.67-.223a1.5 1.5 0 0 1 1.344 1.012v.952c0 .548-.444.992-.992.992h-.082a9.006 9.006 0 0 1-5.18-2.203 9.003 9.003 0 0 1-2.203-5.18v-.082c0-.548.444-.992.992-.992h.952c.548 0 .992-.444.992-.992V8.21a1.5 1.5 0 0 1 1.012-1.344l2.235-.67a1.5 1.5 0 0 1 1.983 1.428V7.5a9 9 0 0 1-9 9h-.5a9 9 0 0 1-9-9v-.878Z" />
                 </svg>
                 +8801717182035
@@ -284,7 +284,8 @@ export default function AboutPage() {
             <div className="lg:col-span-5 flex flex-col gap-2">
               {agents.map((a, idx) => (
                 <button
-                  key={idx}
+                  type="button"
+                  key={a.title}
                   onClick={() => setActiveAgentTab(idx)}
                   className={`w-full text-left p-4 rounded-2xl border transition-all flex items-center gap-4 group cursor-pointer ${
                     activeAgentTab === idx

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import  { useState, useEffect } from 'react';
 import { TransitionLink } from './TransitionLink';
 import { useIsAuthenticated, useUser } from '../store/authStore';
@@ -56,13 +56,14 @@ export const Navbar = () => {
       {/* Floating Trigger Button (Always on top) */}
  <div className="fixed top-8 right-8 z-1001">
         <button
+          type="button"
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-3 bg-[#AAFFC7] text-black px-6 py-3.5 rounded-full hover:scale-105 transition-transform duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-pointer border border-[#AAFFC7]/50"
         >
           <span className="text-[13px] tracking-[0.15em] uppercase font-bold mt-[2px]">
             {isOpen ? 'Close' : 'Menu'}
           </span>
-          <div className="relative w-4 h-4 flex items-center justify-center">
+          <div className="relative size-4 flex items-center justify-center">
             <span
               className={`absolute h-[2px] w-full bg-black transition-all duration-300 ${
                 isOpen ? 'rotate-45' : '-translate-y-1'
@@ -133,6 +134,7 @@ export const Navbar = () => {
                 </p>
               </div>
               <button
+                type="button"
                 onClick={handleLogout}
                 className="text-4xl font-light leading-none hover:[text-shadow:0_4px_25px_#67C090] transition-all duration-300 cursor-pointer"
               >
@@ -166,7 +168,7 @@ export const Navbar = () => {
             transition: `opacity 0.6s ease ${isOpen ? 0.8 : 0}s`,
           }}
         >
-          MultiAgent Research © {new Date().getFullYear()}
+          MultiAgent Research Â© {new Date().getFullYear()}
         </div>
       </nav>
     </>

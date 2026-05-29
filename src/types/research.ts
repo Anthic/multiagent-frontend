@@ -1,4 +1,4 @@
-
+﻿
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed';
 
@@ -27,9 +27,17 @@ export interface StartResearchPayload {
   topic: string;
 }
 
+export interface ResearchQuota {
+  limit: number;
+  used: number;
+  remaining: number;
+  resetAt: string | null;
+}
+
 export interface StartResearchResponse {
   job_id: string; 
   message?: string;
+  quota?: ResearchQuota;
 }
 
 export interface PaginatedJobs {

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Lottie from "lottie-react";
@@ -14,7 +14,7 @@ import { bootstrapCsrfToken } from "../../../lib/csrf";
 import { ApiError } from "../../../types/api";
 import { registerSchema } from "@/src/validation/registerSchema";
 import z from "zod";
-import { queueAppToast, showAppToast } from "../../../components/ui/AppToast";
+import { queueAppToast, showAppToast } from "../../../components/ui/appToastEvents";
 
 
 type RegisterFormData = z.infer<typeof registerSchema>;
@@ -38,14 +38,14 @@ const fields = [
     id: "password" as const,
     label: "Password",
     type: "password",
-    placeholder: "••••••••",
+    placeholder: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢",
     autoComplete: "new-password",
   },
   {
     id: "confirmPassword" as const,
     label: "Confirm Password",
     type: "password",
-    placeholder: "••••••••",
+    placeholder: "â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢",
     autoComplete: "new-password",
   },
 ];
@@ -103,14 +103,14 @@ const RegistrationPage = () => {
     },
   ];
 
-  // ── Particles ──────────────────────────────────────────────────
+  // â”€â”€ Particles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
     }).then(() => setInit(true));
   }, []);
 
-  // ── Lottie ─────────────────────────────────────────────────────
+  // â”€â”€ Lottie â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     fetch("/lottie/registration%20lottie.json")
       .then((res) => {
@@ -121,7 +121,7 @@ const RegistrationPage = () => {
       .catch((err) => console.error("Error loading Lottie data:", err));
   }, []);
 
-  // ── GSAP staggered entrance ────────────────────────────────────
+  // â”€â”€ GSAP staggered entrance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!cardRef.current) return;
 
@@ -170,7 +170,7 @@ const RegistrationPage = () => {
       );
   }, []);
 
-  // ── Submit ─────────────────────────────────────────────────────
+  // â”€â”€ Submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!serverError || !cardRef.current) return;
 
@@ -222,7 +222,7 @@ const RegistrationPage = () => {
 
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#0a0a0a] font-sans">
-      {/* ── Floating Back Button ── */}
+      {/* â”€â”€ Floating Back Button â”€â”€ */}
       <Link
         href="/"
         className="absolute top-6 left-6 z-20 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] cursor-pointer"
@@ -243,7 +243,7 @@ const RegistrationPage = () => {
         </svg>
         Back to Home
       </Link>
-      {/* ── Particles ── */}
+      {/* â”€â”€ Particles â”€â”€ */}
       {init && (
         <Particles
           id="register-particles"
@@ -281,12 +281,12 @@ const RegistrationPage = () => {
         />
       )}
 
-      {/* ── Card ── */}
+      {/* â”€â”€ Card â”€â”€ */}
       <div
         ref={cardRef}
         className="relative z-10 flex w-11/12 max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl md:flex-row"
       >
-        {/* ── Left: Form ── */}
+        {/* â”€â”€ Left: Form â”€â”€ */}
         <div className="flex w-full flex-col justify-center p-8 md:w-1/2 md:p-12">
           <h2
             ref={headingRef}
@@ -363,7 +363,7 @@ const RegistrationPage = () => {
                       className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-300 transition-colors hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <span className="relative block h-4 w-6 rounded-full border border-current">
-                        <span className="absolute left-1/2 top-1/2 h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
+                        <span className="absolute left-1/2 top-1/2 size-1.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-current" />
                         {isVisible && (
                           <span className="absolute left-1/2 top-1/2 h-[1px] w-7 -translate-x-1/2 -translate-y-1/2 rotate-45 bg-current" />
                         )}
@@ -408,7 +408,7 @@ const RegistrationPage = () => {
               disabled={isPending}
               className="mt-6 w-full rounded-lg bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition-all duration-300 hover:-translate-y-0.5 hover:from-cyan-400 hover:via-blue-500 hover:to-violet-500 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {isPending ? "Creating Account..." : "Register Now"}
+              {isPending ? "Creating Account…" : "Register Now"}
             </button>
           </form>
 
@@ -424,7 +424,7 @@ const RegistrationPage = () => {
           </p>
         </div>
 
-        {/* ── Right: Lottie ── */}
+        {/* â”€â”€ Right: Lottie â”€â”€ */}
         <div className="relative hidden min-h-[520px] w-full items-center justify-center overflow-hidden bg-white/5 md:flex md:w-1/2">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 mix-blend-overlay" />
           <div className="relative z-10 flex h-full w-full items-center justify-center px-8 py-10">
@@ -437,7 +437,7 @@ const RegistrationPage = () => {
               />
             ) : (
               <div className="flex h-full items-center justify-center text-gray-400">
-                Loading animation...
+                Loading animation…
               </div>
             )}
           </div>

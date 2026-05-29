@@ -1,4 +1,4 @@
-import { TransitionLink } from '@/src/components/TransitionLink';
+﻿import { TransitionLink } from '@/src/components/TransitionLink';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export default function ContactPage() {
       {/* Navbar */}
       <nav className="fixed top-0 left-0 right-0 flex items-center justify-between px-12 py-6 border-b border-black/10 backdrop-blur-md z-10">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
+          <div className="size-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center">
             <span className="text-white text-base font-bold">M</span>
           </div>
           <span className="font-bold text-lg tracking-tight">MultiAgent<span className="text-indigo-600">Research</span></span>

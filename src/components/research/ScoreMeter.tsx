@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 
@@ -73,7 +73,7 @@ export const ScoreMeter: React.FC<ScoreMeterProps> = ({ score, type }) => {
         {isCritique ? 'CRITIQUE RATING' : 'FACT-CHECK INTEGRITY'}
       </h4>
 
-      <div className="relative w-36 h-36 flex items-center justify-center">
+      <div className="relative size-36 flex items-center justify-center">
         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
           <circle
             cx="50"

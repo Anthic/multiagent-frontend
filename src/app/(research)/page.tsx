@@ -53,23 +53,6 @@ export default function ResearchPage() {
   const setTopic = (topic: string) =>
     setUiState((prev) => ({ ...prev, topic }));
  
-  // ── Diagnostics & History fetch ───────────────────────────────────────────
-  const fetchDiagnostics = useCallback(async () => {
-    try {
-      const healthRes = await api.get<{ status: string }>('/research/health');
-      setDiagnostics((prev) => ({ ...prev, agentOnline: healthRes.success }));
-    } catch {
-      setDiagnostics((prev) => ({ ...prev, agentOnline: false }));
-    }
- 
-    try {
-      const cacheRes = await api.get<any>('/research/cache-stats');
-      if (cacheRes.success && cacheRes.data) {
-        setDiagnostics((prev) => ({ ...prev, cacheStats: cacheRes.data }));
-      }
-    } catch {}
-  }, []);
- 
   const fetchHistory = useCallback(async () => {
     try {
       const res = await ResearchService.getHistory(10);
@@ -85,13 +68,62 @@ export default function ResearchPage() {
   }, []);
  
   useEffect(() => {
-    fetchDiagnostics();
-    if (isAuthenticated) fetchHistory();
- 
+    let isMounted = true;
+
+    void (async () => {
+      try {
+        const healthRes = await api.get<{ status: string }>('/research/health');
+        if (!isMounted) return;
+
+        setDiagnostics((prev) => ({ ...prev, agentOnline: healthRes.success }));
+      } catch {
+        if (!isMounted) return;
+
+        setDiagnostics((prev) => ({ ...prev, agentOnline: false }));
+      }
+
+      try {
+        const cacheRes = await api.get<{
+          total_keys?: number;
+          hit_rate?: string;
+        }>('/research/cache-stats');
+
+        if (!isMounted) return;
+
+        if (cacheRes.success && cacheRes.data) {
+          setDiagnostics((prev) => ({ ...prev, cacheStats: cacheRes.data }));
+        }
+      } catch {
+        if (!isMounted) return;
+      }
+    })();
+
+    if (isAuthenticated) {
+      void (async () => {
+        try {
+          const res = await ResearchService.getHistory(10);
+          if (!isMounted) return;
+
+          if (res.success && res.data) {
+            setHistoryState({
+              records: res.data.records || [],
+              count: res.data.count || 0,
+            });
+          }
+        } catch (err: unknown) {
+          if (!isMounted) return;
+
+          console.error('Failed to load history', err);
+        }
+      })();
+    }
+
     return () => {
+      isMounted = false;
+
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
     };
-  }, [isAuthenticated, fetchDiagnostics, fetchHistory]);
+  }, [isAuthenticated]);
  
   // ── Polling ───────────────────────────────────────────────────────────────
   const startPolling = useCallback(
@@ -114,19 +146,16 @@ export default function ResearchPage() {
             clearInterval(pollIntervalRef.current!);
             dispatch({ type: 'FAILED', error: job.error || 'Pipeline crashed' });
           } else {
-            const payload: Partial<Pick<JobState, 'progress' | 'stage' | 'status' | 'rewrittenQueries'>> = {
+            const payload: Pick<JobState, 'progress' | 'stage' | 'status' | 'rewrittenQueries'> = {
               progress: job.progress || 0,
               stage: job.stage || 'running',
               status: job.status,
+              rewrittenQueries: job.result?.rewritten_queries || [],
             };
-            
-            if (job.result?.rewritten_queries) {
-              payload.rewrittenQueries = job.result.rewritten_queries;
-            }
  
             dispatch({
               type: 'POLL_UPDATE',
-              payload: payload as any,
+              payload,
             });
           }
         } catch (err) {
@@ -153,8 +182,10 @@ export default function ResearchPage() {
       } else {
         throw new Error(startRes.message || 'Could not start research pipeline');
       }
-    } catch (err: any) {
-      dispatch({ type: 'FAILED', error: err?.message || 'Failed to trigger the multi-agent orchestrator' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to trigger the multi-agent orchestrator';
+
+      dispatch({ type: 'FAILED', error: message });
     }
   };
  
@@ -178,14 +209,47 @@ export default function ResearchPage() {
         }
         setTab('report');
       }
-    } catch (err: any) {
-      dispatch({ type: 'FAILED', error: err?.message || 'Could not load historical research session' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Could not load historical research session';
+
+      dispatch({ type: 'FAILED', error: message });
     }
   };
 
   useEffect(() => {
     if (isAuthenticated && queryJobId) {
-      handleLoadHistoryJob(queryJobId);
+      let isMounted = true;
+
+      void (async () => {
+        dispatch({ type: 'RESET' });
+
+        try {
+          const res = await ResearchService.getJobStatus(queryJobId);
+          if (!isMounted) return;
+
+          if (res.success && res.data) {
+            const job = res.data;
+
+            if (job.result) {
+              dispatch({ type: 'DONE', result: job.result });
+            } else {
+              dispatch({ type: 'LOAD_HISTORY', job });
+            }
+
+            setTab('report');
+          }
+        } catch (err: unknown) {
+          if (!isMounted) return;
+
+          const message = err instanceof Error ? err.message : 'Could not load historical research session';
+
+          dispatch({ type: 'FAILED', error: message });
+        }
+      })();
+
+      return () => {
+        isMounted = false;
+      };
     }
   }, [isAuthenticated, queryJobId]);
  
@@ -560,7 +624,7 @@ export default function ResearchPage() {
                                   <span className="w-6 h-6 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/20">
                                     {idx + 1}
                                   </span>
-                                  <span>"{q}"</span>
+                                  <span>&quot;{q}&quot;</span>
                                 </div>
                               ))}
                             </div>

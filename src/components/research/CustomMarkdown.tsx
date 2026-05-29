@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React from 'react';
 
@@ -58,7 +58,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
               className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 underline underline-offset-4 transition-colors font-medium inline-flex items-center gap-0.5"
             >
               {linkText}
-              <svg className="w-3 h-3 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="size-3 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </a>
@@ -88,7 +88,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
           <div key={`code-${i}`} className="my-6 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-black/90 dark:bg-black/95 text-gray-200 shadow-[0_12px_30px_rgba(0,0,0,0.15)] font-mono text-sm leading-relaxed">
             <div className="flex items-center justify-between px-4 py-2 border-b border-white/5 bg-white/5 text-xs text-gray-400">
               <span className="uppercase tracking-widest font-semibold">{codeBlockLang || 'code'}</span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
             </div>
             <pre className="p-4 overflow-x-auto select-all">
               <code>{codeBlockContent.join('\n')}</code>
@@ -157,7 +157,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
       inList = true;
       elements.push(
         <div key={`li-${i}`} className="flex items-start gap-2.5 my-2.5 pl-4 font-roboto text-[#333333] dark:text-gray-300">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 shrink-0 animate-pulse" />
+          <span className="size-1.5 rounded-full bg-emerald-500 mt-2 shrink-0 animate-pulse" />
           <span className="leading-relaxed">{parseInlineStyles(trimmed.slice(2))}</span>
         </div>
       );

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
@@ -96,18 +96,18 @@ export function ZKConsensusPanel() {
       {/* PANEL TITLE BAR */}
       <div className="flex items-center justify-between border-b border-black/5 pb-4">
         <div className="flex items-center gap-3">
-          <span className="relative flex h-3 w-3">
+          <span className="relative flex size-3">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#7c3aed] opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-3 w-3 bg-[#7c3aed]"></span>
+            <span className="relative inline-flex rounded-full size-3 bg-[#7c3aed]"></span>
           </span>
           <span className="font-audiowide text-sm tracking-[0.15em] uppercase text-black/70">
             ZK Consensus Shard
           </span>
         </div>
         <div className="flex gap-1.5">
-          <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
-          <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
-          <span className="w-2.5 h-2.5 rounded-full bg-black/10" />
+          <span className="size-2.5 rounded-full bg-black/10" />
+          <span className="size-2.5 rounded-full bg-black/10" />
+          <span className="size-2.5 rounded-full bg-black/10" />
         </div>
       </div>
 
@@ -115,7 +115,7 @@ export function ZKConsensusPanel() {
       <div className="bg-[#ede5d1]/40 border border-black/5 rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden h-[180px]">
         
         {/* Orbital nodes SVG */}
-        <svg viewBox="0 0 200 200" className="w-[140px] h-[140px]">
+        <svg viewBox="0 0 200 200" className="size-[140px]">
           {/* Orbital path */}
           <circle cx="100" cy="100" r="60" fill="none" stroke="rgba(0,0,0,0.05)" strokeWidth="2" strokeDasharray="3,3" />
 
@@ -183,7 +183,7 @@ export function ZKConsensusPanel() {
                 {hoveredNode.name}: {hoveredNode.hash} (Ping: {hoveredNode.ping})
               </span>
             ) : isVerifying ? (
-              <span className="text-[#7c3aed] font-semibold animate-pulse">Running proof validation...</span>
+              <span className="text-[#7c3aed] font-semibold animate-pulse">Running proof validation…</span>
             ) : verificationSuccess ? (
               <span className="text-[#10b981] font-bold">Block consensus verified successfully</span>
             ) : (
@@ -225,7 +225,7 @@ export function ZKConsensusPanel() {
       >
         <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full transition-transform duration-700 group-hover:translate-x-full" />
         <span className="relative">
-          {isVerifying ? 'Verifying Consensus...' : 'Generate ZK-Proof Shard'}
+          {isVerifying ? 'Verifying Consensus…' : 'Generate ZK-Proof Shard'}
         </span>
       </button>
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import Lottie from "lottie-react";
@@ -13,7 +13,7 @@ import { useLogin } from "../../../hooks/useAuth";
 import { bootstrapCsrfToken } from "../../../lib/csrf";
 import { ApiError } from "../../../types/api";
 import { loginSchema } from "@/src/validation/loginSchema";
-import { queueAppToast, showAppToast } from "../../../components/ui/AppToast";
+import { queueAppToast, showAppToast } from "../../../components/ui/appToastEvents";
 
 
 
@@ -39,14 +39,14 @@ const LoginPage = () => {
     resolver: zodResolver(loginSchema),
   });
 
-  // ── Particles init ──────────────────────────────────────────────
+  // â”€â”€ Particles init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
     }).then(() => setInit(true));
   }, []);
 
-  // ── Lottie load ─────────────────────────────────────────────────
+  // â”€â”€ Lottie load â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     fetch("/lottie/Sign%20up.json")
       .then((res) => {
@@ -57,7 +57,7 @@ const LoginPage = () => {
       .catch((err) => console.error("Error loading Lottie data:", err));
   }, []);
 
-  // ── GSAP card entrance ──────────────────────────────────────────
+  // â”€â”€ GSAP card entrance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (!cardRef.current) return;
     gsap.fromTo(
@@ -67,7 +67,7 @@ const LoginPage = () => {
     );
   }, []);
 
-  // ── Form submit ─────────────────────────────────────────────────
+  // â”€â”€ Form submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const onSubmit = (data: LoginFormData) => {
     setServerError(null);
     login(data, {
@@ -101,7 +101,7 @@ const LoginPage = () => {
 
   return (
     <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#0a0a0a] font-sans">
-      {/* ── Floating Back Button ── */}
+      {/* â”€â”€ Floating Back Button â”€â”€ */}
       <Link
         href="/"
         className="absolute top-6 left-6 z-20 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] cursor-pointer"
@@ -122,7 +122,7 @@ const LoginPage = () => {
         </svg>
         Back to Home
       </Link>
-      {/* ── Particles background ── */}
+      {/* â”€â”€ Particles background â”€â”€ */}
       {init && (
         <Particles
           id="tsparticles"
@@ -160,12 +160,12 @@ const LoginPage = () => {
         />
       )}
 
-      {/* ── Card ── */}
+      {/* â”€â”€ Card â”€â”€ */}
       <div
         ref={cardRef}
         className="relative z-10 flex w-11/12 max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl md:flex-row"
       >
-        {/* ── Left: Form panel ── */}
+        {/* â”€â”€ Left: Form panel â”€â”€ */}
         <div className="flex w-full flex-col justify-center p-8 md:w-1/2 md:p-12">
           <h2 className="mb-2 text-3xl font-bold tracking-wide text-white">
             Welcome Back
@@ -221,7 +221,7 @@ const LoginPage = () => {
                 id="password"
                 type="password"
                 autoComplete="current-password"
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 {...register("password")}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-gray-500 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -238,7 +238,7 @@ const LoginPage = () => {
               disabled={isPending}
               className="mt-6 w-full rounded-lg bg-gradient-to-r from-cyan-500 via-blue-600 to-violet-600 py-3 font-semibold text-white shadow-lg shadow-blue-950/40 transition-all duration-300 hover:-translate-y-0.5 hover:from-cyan-400 hover:via-blue-500 hover:to-violet-500 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {isPending ? "Signing in..." : "Login"}
+              {isPending ? "Signing in…" : "Login"}
             </button>
           </form>
 
@@ -254,7 +254,7 @@ const LoginPage = () => {
           </p>
         </div>
 
-        {/* ── Right: Lottie panel ── */}
+        {/* â”€â”€ Right: Lottie panel â”€â”€ */}
         <div className="relative hidden min-h-[520px] w-full items-center justify-center overflow-hidden bg-white/5 md:flex md:w-1/2">
           <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-purple-500/10 mix-blend-overlay" />
           <div className="relative z-10 flex h-full w-full items-center justify-center px-8 py-10">
@@ -267,7 +267,7 @@ const LoginPage = () => {
               />
             ) : (
               <div className="flex h-full items-center justify-center text-gray-400">
-                Loading animation...
+                Loading animation…
               </div>
             )}
           </div>

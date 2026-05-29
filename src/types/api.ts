@@ -1,9 +1,10 @@
-
+﻿
 
 export interface ApiError {
   message: string;
   statusCode: number;
   errors?: Record<string, string[]>;
+  data?: unknown;
 }
 
 export interface ApiResponse<T> {

@@ -1,6 +1,6 @@
-import { api } from "../lib/api";
+﻿import { api } from "../lib/api";
 import { ApiResponse } from "../types/api";
-import { Job, PaginatedJobs, StartResearchPayload, StartResearchResponse } from "../types/research";
+import { Job, PaginatedJobs, ResearchQuota, StartResearchPayload, StartResearchResponse } from "../types/research";
 
  const startResearch = (payload : StartResearchPayload) : Promise<ApiResponse<StartResearchResponse>> => api.post<StartResearchResponse>('/research' , payload)
 
@@ -13,7 +13,8 @@ import { Job, PaginatedJobs, StartResearchPayload, StartResearchResponse } from 
 
  const getHistoryById = (id : string): Promise<ApiResponse<Job>>=> api.get<Job>(`/research/history/${id}`)
 
+ const getQuota = (): Promise<ApiResponse<ResearchQuota>> => api.get<ResearchQuota>('/research/quota')
 
 export const ResearchService = {
-    startResearch,getJobStatus,getHistory,getHistoryById
+    startResearch,getJobStatus,getHistory,getHistoryById,getQuota
 }

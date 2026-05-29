@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -13,7 +13,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // ─── Step 1: wait for client-side hydration ───────────────────────────────
+  // â”€â”€â”€ Step 1: wait for client-side hydration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   // Zustand persist reads from localStorage which doesn't exist on the server.
   // Rendering children before `mounted` prevents hydration mismatches.
   const [mounted, setMounted] = useState(false);
@@ -23,7 +23,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
-  // ─── Route Guarding ────────────────────────────────────────────────────────
+  // â”€â”€â”€ Route Guarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     if (mounted) {
       const protectedRoutes = ['/dashboard', '/research'];
@@ -35,12 +35,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, [pathname, isAuthenticated, router, mounted]);
 
-  // ─── Step 2: show a spinner only while an active session is being validated ─
+  // â”€â”€â”€ Step 2: show a spinner only while an active session is being validated â”€
   // `isFetched` becomes true on both success AND error, so the spinner always
   // clears once the /auth/me request settles (or is skipped when not logged in).
   const ready = isFetched || isInitialized;
 
-  // Show nothing (no HTML) until the client has hydrated — avoids mismatch
+  // Show nothing (no HTML) until the client has hydrated â€” avoids mismatch
   if (!mounted) return null;
 
   // Show spinner only if we're authenticated and still validating the session
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       >
         <div className="relative flex flex-col items-center gap-6 p-10 rounded-[32px] border border-black/5 bg-white/20 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.03)]">
           {/* Stunning glowing double rings */}
-          <div className="relative w-16 h-16 flex items-center justify-center">
+          <div className="relative size-16 flex items-center justify-center">
             {/* Outer ring */}
             <div
               className="absolute inset-0 rounded-full border-2 border-emerald-800/10 border-t-emerald-800"
@@ -64,13 +64,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
             />
             {/* Inner ring */}
             <div
-              className="absolute w-10 h-10 rounded-full border-2 border-purple-800/10 border-t-purple-800"
+              className="absolute size-10 rounded-full border-2 border-purple-800/10 border-t-purple-800"
               style={{
                 animation: 'spinCounterClockwise 1s cubic-bezier(0.5, 0, 0.5, 1) infinite',
               }}
             />
             {/* Center glow dot */}
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-800 animate-ping" />
+            <div className="size-2.5 rounded-full bg-emerald-800 animate-ping" />
           </div>
 
           {/* Typography details */}
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               className="font-mono text-[9px] uppercase tracking-wider text-black/45 animate-pulse"
               style={{ letterSpacing: '0.15em' }}
             >
-              Securing Session...
+              Securing Sessionâ€¦
             </p>
           </div>
 
