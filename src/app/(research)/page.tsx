@@ -6,7 +6,7 @@ import { ScoreMeter } from "@/src/components/research/ScoreMeter"
 import { api } from "@/src/lib/api"
 import { initalJobState, jobReducer } from "@/src/reducer/jobReducer"
 import { ResearchService } from "@/src/services/researchService"
-import { useIsAuthenticated } from "@/src/store/authStore"
+import { useAuthStore, useIsAuthenticated } from "@/src/store/authStore"
 import { ActiveTab, DiagnosticsState, HistoryState, JobState, UIState } from "@/src/types/researchState"
 import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import { useSearchParams } from 'next/navigation';
@@ -280,12 +280,19 @@ export default function ResearchPage() {
           <p className="font-roboto text-sm text-slate-400 leading-relaxed mb-6">
             Multi-Agent research pipeline accesses deep web parsing indexes and LLM consensus pools. Please authenticate your session to run orchestrations.
           </p>
-          <a
-            href="/login"
-            className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold tracking-widest text-xs uppercase hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_12px_30px_rgba(16,185,129,0.25)]"
+          <button
+            onClick={() => {
+              if (typeof window !== 'undefined') {
+                document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+                document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+                useAuthStore.getState().clearAuth();
+                window.location.href = '/login';
+              }
+            }}
+            className="w-full py-3.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold tracking-widest text-xs uppercase hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-[0_12px_30px_rgba(16,185,129,0.25)] cursor-pointer"
           >
             Authenticate Session
-          </a>
+          </button>
         </div>
       </main>
     );

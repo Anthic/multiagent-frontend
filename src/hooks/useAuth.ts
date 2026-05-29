@@ -26,13 +26,17 @@ export function useCurrentUser() {
   // by Zustand before the first render, so it is safe to use as `enabled`.
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
 
+  // Enable the query if either Zustand says authenticated OR we have an accessToken cookie
+  const hasCookie = typeof window !== 'undefined' && document.cookie.split(';').some((c) => c.trim().startsWith('accessToken='));
+  const shouldFetch = isAuthenticated || hasCookie;
+
   // When the user is NOT authenticated we skip the API call entirely and mark
   // the store as initialized right away so AuthProvider never shows a spinner.
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!shouldFetch) {
       setInitialized(true);
     }
-  }, [isAuthenticated, setInitialized]);
+  }, [shouldFetch, setInitialized]);
 
   return useQuery({
     queryKey: authQueryKeys.me,
@@ -44,15 +48,18 @@ export function useCurrentUser() {
           setUser(res.data.user);
         }
         return res.data?.user ?? null;
-      } catch {
+      } catch (err) {
         setInitialized(true);
         clearAuth();
+        if (typeof window !== 'undefined') {
+          document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+          document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+        }
         return null;
       }
     },
 
-    
-    enabled: isAuthenticated,
+    enabled: shouldFetch,
 
     staleTime: 5 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
