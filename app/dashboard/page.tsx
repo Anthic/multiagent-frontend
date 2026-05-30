@@ -7,6 +7,16 @@ import { useUser, useIsAuthenticated } from '@/src/store/authStore';
 import { Job } from '@/src/types/research';
 import { TransitionLink } from '@/src/components/TransitionLink';
 
+type HoveredMetricPoint = {
+  idx: number;
+  x: number;
+  y: number;
+  val: number;
+  label: string;
+  date: string;
+  topic: string;
+};
+
 export default function DashboardPage() {
   const user = useUser();
   const isAuthenticated = useIsAuthenticated();
@@ -15,7 +25,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMetric, setActiveMetric] = useState<'quality' | 'factCheck' | 'duration'>('quality');
-  const [hoveredPoint, setHoveredPoint] = useState<any>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<HoveredMetricPoint | null>(null);
 
   useEffect(() => {
     async function fetchHistory() {
@@ -449,7 +459,7 @@ export default function DashboardPage() {
                 className="w-full bg-white/50 border border-black/10 rounded-full px-5 py-2.5 text-sm focus:outline-none focus:border-emerald-600/50 focus:ring-1 focus:ring-emerald-600/20 backdrop-blur-md transition-all font-roboto"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-black/30 text-xs pointer-events-none">
-                ðŸ”
+                Search
               </span>
             </div>
           </div>
@@ -461,7 +471,7 @@ export default function DashboardPage() {
             </div>
           ) : filteredHistory.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
-              <span className="text-5xl mb-4">ðŸ§­</span>
+              <span className="text-xs font-mono uppercase tracking-[0.25em] text-black/35 mb-4">Empty</span>
               <h3 className="font-metamorphous text-xl font-bold text-black/80 mb-2">No Records Found</h3>
               <p className="font-roboto text-sm text-black/50 max-w-sm mb-6">
                 {searchQuery

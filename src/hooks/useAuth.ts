@@ -82,8 +82,8 @@ export function useLogin() {
 
     onSuccess: (res) => {
       const user = res.data?.user;
-      const token = (res.data as any)?.accessToken;
-      const refreshToken = (res.data as any)?.refreshToken;
+      const token = res.data?.accessToken;
+      const refreshToken = res.data?.refreshToken;
       if (user) {
         setUser(user);
         queryClient.setQueryData(authQueryKeys.me, user);

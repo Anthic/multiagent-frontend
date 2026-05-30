@@ -55,10 +55,10 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
               href={linkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 underline underline-offset-4 transition-colors font-medium inline-flex items-center gap-0.5"
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-500 underline underline-offset-4 transition-colors font-medium break-words"
             >
               {linkText}
-              <svg className="size-3 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="ml-0.5 inline-block size-3 align-baseline" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
               </svg>
             </a>
@@ -158,7 +158,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
       elements.push(
         <div key={`li-${i}`} className="flex items-start gap-2.5 my-2.5 pl-4 font-roboto text-[#333333] dark:text-gray-300">
           <span className="size-1.5 rounded-full bg-emerald-500 mt-2 shrink-0 animate-pulse" />
-          <span className="leading-relaxed">{parseInlineStyles(trimmed.slice(2))}</span>
+          <span className="min-w-0 leading-relaxed break-words">{parseInlineStyles(trimmed.slice(2))}</span>
         </div>
       );
       continue;
@@ -166,11 +166,11 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
 
     // Paragraphs
     elements.push(
-      <p key={`p-${i}`} className="my-4 leading-relaxed font-roboto text-[#333333] dark:text-gray-300 text-base sm:text-[17px]">
+      <p key={`p-${i}`} className="my-4 leading-relaxed font-roboto text-[#333333] dark:text-gray-300 text-base sm:text-[17px] break-words">
         {parseInlineStyles(line)}
       </p>
     );
   }
 
-  return <div className="prose max-w-none dark:prose-invert">{elements}</div>;
+  return <div className="prose max-w-none overflow-visible break-words dark:prose-invert">{elements}</div>;
 };

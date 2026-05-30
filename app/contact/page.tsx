@@ -36,7 +36,7 @@ export default function ContactPage() {
           Say Hello
         </h1>
         <p className="mt-8 text-xl text-black/60 max-w-2xl leading-relaxed">
-          Have questions or want to learn more? We'd love to hear from you. Reach out to our team anytime.
+          Have questions or want to learn more? We&apos;d love to hear from you. Reach out to our team anytime.
         </p>
       </section>
     </main>

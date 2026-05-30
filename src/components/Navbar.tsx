@@ -168,7 +168,7 @@ export const Navbar = () => {
             transition: `opacity 0.6s ease ${isOpen ? 0.8 : 0}s`,
           }}
         >
-          MultiAgent Research Â© {new Date().getFullYear()}
+          MultiAgent Research (c) {new Date().getFullYear()}
         </div>
       </nav>
     </>

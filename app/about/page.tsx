@@ -20,37 +20,37 @@ export default function AboutPage() {
   const agents = [
     {
       title: 'Query Rewriter Agent',
-      icon: 'ðŸ§ ',
+      icon: 'QR',
       role: 'Statistical expansion & target alignment',
       desc: 'Takes the raw research prompt and expands it into multiple optimized, statistically rich search queries. It filters out ambiguity and structures queries to harvest the highest density of relevant results.',
     },
     {
       title: 'Searcher Agent',
-      icon: 'ðŸŒ',
+      icon: 'SE',
       role: 'Cross-origin telemetry harvesting',
       desc: 'Executes parallel searches across the web, fetching raw results from trusted scientific journals, verified databases, and official publications. Powered by statistical relevancy indexing.',
     },
     {
       title: 'Reader & Scraper Agent',
-      icon: 'ðŸ“–',
+      icon: 'RS',
       role: 'Semantic text parsing & noise filtration',
       desc: 'Scrapes live web content, cleans HTML fluff, and extracts deep semantic context. It isolates target knowledge and structures raw text into cohesive information vectors.',
     },
     {
       title: 'Fact-Checking Agent',
-      icon: 'ðŸ›¡ï¸',
+      icon: 'FC',
       role: 'Claim validation & source cross-referencing',
       desc: 'Acts as the ultimate truth gatekeeper. It cross-checks parsed data against verified medical and scientific publications to assign a precise Fact-Check Trust Percentage.',
     },
     {
       title: 'Critique & Grading Agent',
-      icon: 'ðŸ“Š',
+      icon: 'QA',
       role: 'Strict quality assurance grading',
       desc: 'Grades the accumulated research according to rigorous statistical criteria. Evaluates the depth, source variety, and factual alignment, outputting a precise 0-10 Quality score.',
     },
     {
       title: 'Writer & Synthesis Agent',
-      icon: 'âœï¸',
+      icon: 'WS',
       role: 'Academic markdown generation',
       desc: 'Synthesizes the finalized, grade-verified data into a comprehensive, beautifully structured research workspace report. Complete with proper source citations and formatting.',
     },

@@ -17,7 +17,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Zustand persist reads from localStorage which doesn't exist on the server.
   // Rendering children before `mounted` prevents hydration mismatches.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => setMounted(true), 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, []);
 
   const { isLoading, isFetched } = useCurrentUser();
   const isInitialized = useAuthStore((s) => s.isInitialized);
@@ -85,7 +89,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               className="font-mono text-[9px] uppercase tracking-wider text-black/45 animate-pulse"
               style={{ letterSpacing: '0.15em' }}
             >
-              Securing Sessionâ€¦
+              Securing Session...
             </p>
           </div>
 

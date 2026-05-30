@@ -14,10 +14,9 @@ export function AtlasHeadSceneWrapper() {
   const [shouldMountScene, setShouldMountScene] = useState(false);
 
   useEffect(() => {
-    let timeoutId: number | undefined;
     let idleId: number | undefined;
 
-    timeoutId = window.setTimeout(() => {
+    const timeoutId = window.setTimeout(() => {
       if ('requestIdleCallback' in window) {
         idleId = window.requestIdleCallback(
           () => setShouldMountScene(true),
@@ -30,7 +29,7 @@ export function AtlasHeadSceneWrapper() {
     }, 1050);
 
     return () => {
-      if (timeoutId) window.clearTimeout(timeoutId);
+      window.clearTimeout(timeoutId);
       if (idleId && 'cancelIdleCallback' in window) {
         window.cancelIdleCallback(idleId);
       }

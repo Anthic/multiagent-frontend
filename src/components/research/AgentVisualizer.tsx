@@ -235,10 +235,10 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
         <div className="mt-2 p-4 bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 rounded-xl flex flex-col gap-3 font-mono text-[11px] leading-relaxed">
           {rewrittenQueries.length > 0 && activeIndex >= 1 && (
             <div className="flex flex-col gap-1">
-              <span className="text-[#67C090] font-bold uppercase tracking-wider">âž” Searcher expanded queries:</span>
+              <span className="text-[#67C090] font-bold uppercase tracking-wider">Searcher expanded queries:</span>
               <ul className="list-inside list-disc pl-2 text-black/75 dark:text-white/70 flex flex-col gap-0.5">
                 {rewrittenQueries.map((q, idx) => (
-                  <li key={`q-${idx}-${q.slice(0, 12)}`} className="truncate">"{q}"</li>
+                  <li key={`q-${idx}-${q.slice(0, 12)}`} className="truncate">&quot;{q}&quot;</li>
                 ))}
               </ul>
             </div>
@@ -246,7 +246,7 @@ export const AgentVisualizer: React.FC<AgentVisualizerProps> = ({
 
           {outlinePlan && activeIndex >= 0 && (
             <div className="flex flex-col gap-1 max-h-48 overflow-y-auto border-t border-black/5 dark:border-white/5 pt-2">
-              <span className="text-[#67C090] font-bold uppercase tracking-wider">âž” Decomposed blueprint plan:</span>
+              <span className="text-[#67C090] font-bold uppercase tracking-wider">Decomposed blueprint plan:</span>
               <pre className="text-black/70 dark:text-white/60 whitespace-pre-wrap pl-2 leading-tight">
                 {outlinePlan}
               </pre>

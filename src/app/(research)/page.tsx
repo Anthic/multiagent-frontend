@@ -3,10 +3,13 @@ import { Navbar } from "@/src/components/Navbar"
 import { AgentVisualizer } from "@/src/components/research/AgentVisualizer"
 import { CustomMarkdown } from "@/src/components/research/CustomMarkdown"
 import { ScoreMeter } from "@/src/components/research/ScoreMeter"
+import { showAppToast } from "@/src/components/ui/appToastEvents"
 import { api } from "@/src/lib/api"
 import { initalJobState, jobReducer } from "@/src/reducer/jobReducer"
 import { ResearchService } from "@/src/services/researchService"
 import { useAuthStore, useIsAuthenticated } from "@/src/store/authStore"
+import { ApiError } from "@/src/types/api"
+import { ResearchQuota } from "@/src/types/research"
 import { ActiveTab, DiagnosticsState, HistoryState, JobState, UIState } from "@/src/types/researchState"
 import { useCallback, useEffect, useReducer, useRef, useState } from "react"
 import { useSearchParams } from 'next/navigation';
@@ -40,6 +43,7 @@ export default function ResearchPage() {
     records: [],
     count: 0,
   });
+  const [quota, setQuota] = useState<ResearchQuota | null>(null);
  
   const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -52,6 +56,35 @@ export default function ResearchPage() {
  
   const setTopic = (topic: string) =>
     setUiState((prev) => ({ ...prev, topic }));
+
+  const quotaResetLabel = (resetAt?: string | null) => {
+    if (!resetAt) return 'about 24 hours';
+
+    const resetDate = new Date(resetAt);
+    if (Number.isNaN(resetDate.getTime())) return 'about 24 hours';
+
+    return resetDate.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  };
+
+  const getQuotaFromError = (err: unknown): ResearchQuota | null => {
+    const data = (err as Partial<ApiError> | undefined)?.data;
+    if (!data || typeof data !== 'object' || !('quota' in data)) return null;
+
+    return (data as { quota?: ResearchQuota }).quota ?? null;
+  };
+
+  const showQuotaToast = (quotaInfo?: ResearchQuota | null) => {
+    showAppToast({
+      type: 'error',
+      title: 'Daily research limit reached',
+      message: `You have used all ${quotaInfo?.limit ?? 3} daily research runs. You can use it again after ${quotaResetLabel(quotaInfo?.resetAt)}.`,
+    });
+  };
  
   const fetchHistory = useCallback(async () => {
     try {
@@ -101,7 +134,10 @@ export default function ResearchPage() {
     if (isAuthenticated) {
       void (async () => {
         try {
-          const res = await ResearchService.getHistory(10);
+          const [res, quotaRes] = await Promise.all([
+            ResearchService.getHistory(10),
+            ResearchService.getQuota(),
+          ]);
           if (!isMounted) return;
 
           if (res.success && res.data) {
@@ -109,6 +145,10 @@ export default function ResearchPage() {
               records: res.data.records || [],
               count: res.data.count || 0,
             });
+          }
+
+          if (quotaRes.success && quotaRes.data) {
+            setQuota(quotaRes.data);
           }
         } catch (err: unknown) {
           if (!isMounted) return;
@@ -171,18 +211,31 @@ export default function ResearchPage() {
   const handleStartResearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uiState.topic.trim()) return;
+    if (quota?.remaining === 0) {
+      showQuotaToast(quota);
+      return;
+    }
  
     dispatch({ type: 'START_RESEARCH' }); 
  
     try {
       const startRes = await ResearchService.startResearch({ topic: uiState.topic });
       if (startRes.success && startRes.data) {
+        if (startRes.data.quota) setQuota(startRes.data.quota);
         dispatch({ type: 'SET_JOB_ID', jobId: startRes.data.job_id });
         startPolling(startRes.data.job_id);
       } else {
         throw new Error(startRes.message || 'Could not start research pipeline');
       }
     } catch (err: unknown) {
+      const quotaInfo = getQuotaFromError(err);
+      if (quotaInfo) setQuota(quotaInfo);
+
+      const apiErr = err as Partial<ApiError>;
+      if (apiErr.statusCode === 429 || quotaInfo?.remaining === 0) {
+        showQuotaToast(quotaInfo);
+      }
+
       const message = err instanceof Error ? err.message : 'Failed to trigger the multi-agent orchestrator';
 
       dispatch({ type: 'FAILED', error: message });
@@ -258,6 +311,7 @@ export default function ResearchPage() {
   const { topic, activeTab, sidebarOpen } = uiState;
   const { agentOnline, cacheStats } = diagnostics;
   const { records: history, count: historyCount } = historyState;
+  const quotaExhausted = quota?.remaining === 0;
  
  if (!isAuthenticated) {
     return (
@@ -438,12 +492,23 @@ export default function ResearchPage() {
                 </div>
                 <button
                   type="submit"
-                  disabled={status === 'running' || status === 'queued' || !topic.trim()}
+                  disabled={status === 'running' || status === 'queued' || !topic.trim() || quotaExhausted}
                   className="px-8 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] text-white font-bold tracking-widest text-xs uppercase shadow-[0_12px_24px_rgba(16,185,129,0.2)] transition-all duration-300 disabled:opacity-40 disabled:scale-100 disabled:pointer-events-none cursor-pointer"
                 >
-                  {status === 'running' || status === 'queued' ? 'Processing...' : 'Run Research'}
+                  {status === 'running' || status === 'queued' ? 'Processing...' : quotaExhausted ? 'Limit Reached' : 'Run Research'}
                 </button>
               </div>
+              {quota && (
+                <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+                  <span>Daily quota: {quota.used}/{quota.limit} used</span>
+                  <span className="text-white/15">|</span>
+                  <span className={quotaExhausted ? 'text-rose-300' : 'text-emerald-300'}>
+                    {quotaExhausted
+                      ? `Resets after ${quotaResetLabel(quota.resetAt)}`
+                      : `${quota.remaining} run${quota.remaining === 1 ? '' : 's'} remaining`}
+                  </span>
+                </div>
+              )}
             </form>
           </div>
  
@@ -492,7 +557,7 @@ export default function ResearchPage() {
               </div>
  
               {/* RIGHT: Results Panel */}
-              <div className="bg-black/30 backdrop-blur-xl rounded-3xl border border-white/5 overflow-hidden flex flex-col shadow-2xl">
+              <div className="min-w-0 bg-black/30 backdrop-blur-xl rounded-3xl border border-white/5 flex flex-col shadow-2xl">
  
                 {/* TABS */}
                 <div className="flex border-b border-white/5 bg-black/20 px-6 py-2 overflow-x-auto gap-2">
@@ -519,7 +584,7 @@ export default function ResearchPage() {
                 </div>
  
                 {/* TAB CONTENT (Super crisp white/slate text for perfect readability) */}
-                <div className="p-6 md:p-8 overflow-y-auto flex-1 text-slate-200 scrollbar-thin">
+                <div className="min-w-0 p-6 md:p-8 overflow-visible flex-1 text-slate-200 scrollbar-thin">
                   {status === 'running' && !result ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                       <div className="w-10 h-10 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin mb-4" />
@@ -531,7 +596,7 @@ export default function ResearchPage() {
                     <>
                       {/* REPORT */}
                       {activeTab === 'report' && result && (
-                        <div className="animate-fadeIn prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal">
+                        <div className="animate-fadeIn prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal break-words">
                           <CustomMarkdown 
                             content={(() => {
                               let reportText = result.report;

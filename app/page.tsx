@@ -160,7 +160,7 @@ export default function HomePage() {
         <footer className="w-full border-t border-black/5 pt-8 pb-16 mt-20 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto">
           <div className="flex flex-col items-center sm:items-start gap-1">
             <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/45 select-none">
-              Â© 2026 atlash.ai. All rights reserved.
+              (c) 2026 atlash.ai. All rights reserved.
             </span>
             <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/35">
               Developed by <span className="text-black/60 font-semibold hover:text-[#7c3aed] transition-colors cursor-pointer">Anthic Kumar Singh</span>
