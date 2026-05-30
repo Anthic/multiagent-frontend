@@ -221,11 +221,11 @@ const RegistrationPage = () => {
   };
 
   return (
-    <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-[#0a0a0a] font-sans">
-      {/* â”€â”€ Floating Back Button â”€â”€ */}
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-x-hidden bg-[#0a0a0a] font-sans py-16 sm:py-6">
+      {/* ── Floating Back Button ── */}
       <Link
         href="/"
-        className="absolute top-6 left-6 z-20 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] cursor-pointer"
+        className="fixed top-4 left-4 sm:top-6 sm:left-6 z-20 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2 sm:px-4 sm:py-2.5 font-mono text-[10px] font-bold uppercase tracking-wider text-gray-300 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/10 hover:text-white hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] cursor-pointer"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -243,7 +243,7 @@ const RegistrationPage = () => {
         </svg>
         Back to Home
       </Link>
-      {/* â”€â”€ Particles â”€â”€ */}
+      {/* ── Particles ── */}
       {init && (
         <Particles
           id="register-particles"
@@ -281,13 +281,13 @@ const RegistrationPage = () => {
         />
       )}
 
-      {/* â”€â”€ Card â”€â”€ */}
+      {/* ── Card ── */}
       <div
         ref={cardRef}
-        className="relative z-10 flex w-11/12 max-w-5xl flex-col overflow-hidden rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl md:flex-row"
+        className="relative z-10 flex w-[95%] max-w-5xl flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-white/10 bg-white/5 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] backdrop-blur-xl md:flex-row"
       >
-        {/* â”€â”€ Left: Form â”€â”€ */}
-        <div className="flex w-full flex-col justify-center p-8 md:w-1/2 md:p-12">
+        {/* ── Left: Form ── */}
+        <div className="flex w-full flex-col justify-center p-6 sm:p-8 md:w-1/2 md:p-12">
           <h2
             ref={headingRef}
             className="mb-2 text-3xl font-bold tracking-wide text-white"

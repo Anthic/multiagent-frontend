@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { Navbar } from '@/src/components/Navbar';
@@ -160,15 +160,15 @@ export default function DashboardPage() {
       <div className="absolute top-[-10%] left-[-10%] size-[50vw] rounded-full bg-emerald-100/30 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] size-[50vw] rounded-full bg-amber-100/30 blur-[120px] pointer-events-none" />
 
-      <div className="relative z-10 w-11/12 max-w-7xl mx-auto pt-32">
+      <div className="relative z-10 w-11/12 max-w-7xl mx-auto pt-20 sm:pt-28 md:pt-32">
         {/* Header section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 sm:gap-6 mb-10 sm:mb-12">
           <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 border border-black/10 text-black/60 text-[10px] font-bold tracking-[0.2em] uppercase mb-4 backdrop-blur-md">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 border border-black/10 text-black/60 text-[10px] font-bold tracking-[0.2em] uppercase mb-3 sm:mb-4 backdrop-blur-md">
               <span className="size-1.5 rounded-full bg-[#34D399]" />
               Researcher Control Hub
             </span>
-            <h1 className="font-metamorphous text-4xl sm:text-5xl lg:text-6xl font-light text-[#11100d] leading-none tracking-tight">
+            <h1 className="font-metamorphous text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-[#11100d] leading-none tracking-tight">
               Welcome back,<br />
               <span className="font-semibold text-emerald-800">{user?.name || user?.email?.split('@')[0] || 'Researcher'}</span>
             </h1>
@@ -179,7 +179,7 @@ export default function DashboardPage() {
 
           <TransitionLink
             href="/research"
-            className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-6 py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_15px_35px_rgba(0,0,0,0.15)] transition-transform duration-300 hover:-translate-y-0.5"
+            className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-5 sm:px-6 py-3 sm:py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_15px_35px_rgba(0,0,0,0.15)] transition-transform duration-300 hover:-translate-y-0.5 w-full md:w-auto justify-center"
           >
             <span>New Research Run</span>
             <span className="relative flex size-6 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1">
@@ -247,7 +247,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Selector tabs */}
-            <div className="flex bg-black/5 p-1 rounded-full border border-black/10 backdrop-blur-md">
+            <div className="flex flex-wrap bg-black/5 p-1 rounded-full border border-black/10 backdrop-blur-md gap-1">
               <button
                 onClick={() => setActiveMetric('quality')}
                 className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
@@ -489,7 +489,8 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-left">
+              {/* Desktop table */}
+              <table className="w-full border-collapse text-left hidden sm:table">
                 <thead>
                   <tr className="border-b border-black/10">
                     <th className="pb-4 font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold">Research Topic</th>
@@ -513,7 +514,6 @@ export default function DashboardPage() {
                       hour: '2-digit',
                       minute: '2-digit',
                     });
-
                     return (
                       <tr key={job.job_id} className="border-b border-black/5 hover:bg-black/[0.01] transition-colors group">
                         <td className="py-4 pr-4">
@@ -553,6 +553,41 @@ export default function DashboardPage() {
                   })}
                 </tbody>
               </table>
+
+              {/* Mobile card list */}
+              <div className="flex flex-col gap-4 sm:hidden">
+                {filteredHistory.map((job) => {
+                  const topic = job.result?.topic || 'Untitled Research Query';
+                  const critiqueScore = job.result?.critique_score || 0;
+                  const factCheckScore = job.result?.fact_check_score || 0;
+                  const timeSec = job.result?.time_sec || 0;
+                  const date = new Date(job.created_at * 1000).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  });
+                  return (
+                    <div key={job.job_id} className="border border-black/8 rounded-2xl p-4 bg-white/30 flex flex-col gap-3">
+                      <div>
+                        <p className="font-roboto font-semibold text-black/85 text-sm leading-snug line-clamp-2">{topic}</p>
+                        <p className="text-[10px] font-mono text-black/35 mt-1">JOB_ID: {job.job_id.slice(0, 16)}…</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100/60 text-emerald-800 border border-emerald-200/50">{critiqueScore.toFixed(1)}/10</span>
+                        <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100/60 text-purple-800 border border-purple-200/50">{(factCheckScore * 100).toFixed(0)}%</span>
+                        <span className="font-mono text-xs text-black/55">{timeSec.toFixed(1)}s</span>
+                        <span className="font-mono text-[10px] text-black/40 ml-auto">{date}</span>
+                      </div>
+                      <TransitionLink
+                        href={`/research?jobId=${job.job_id}`}
+                        className="w-full text-center px-4 py-2.5 rounded-full text-xs font-bold bg-[#AAFFC7] text-black border border-[#AAFFC7]/80 hover:bg-emerald-600 hover:text-white transition-all cursor-pointer shadow-sm"
+                      >
+                        Open Workspace
+                      </TransitionLink>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

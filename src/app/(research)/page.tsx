@@ -367,12 +367,12 @@ export default function ResearchPage() {
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
  
       {/* Top HUD diagnostics bar */}
-      <div className="relative z-10 w-full bg-black/40 backdrop-blur-md border-b border-white/5 px-6 py-4 mt-20">
-        <div className="w-full mx-auto flex flex-wrap items-center justify-between gap-4 font-mono text-[10px] tracking-[0.2em] font-bold text-slate-400">
-          <div className="flex items-center gap-6">
+      <div className="relative z-10 w-full bg-black/40 backdrop-blur-md border-b border-white/5 px-4 sm:px-6 py-3 sm:py-4 mt-16 sm:mt-20">
+        <div className="w-full mx-auto flex flex-wrap items-center justify-between gap-2 sm:gap-4 font-mono text-[10px] tracking-[0.2em] font-bold text-slate-400">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-6">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${agentOnline ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)] animate-pulse' : agentOnline === false ? 'bg-rose-500' : 'bg-amber-500 animate-ping'}`} />
-              <span className="text-slate-200">AI AGENT STATE: {agentOnline ? 'ONLINE (ACTIVE)' : agentOnline === false ? 'OFFLINE (STANDBY)' : 'CONNECTING...'}</span>
+              <span className="text-slate-200 text-[9px] sm:text-[10px]">AI AGENT: {agentOnline ? 'ONLINE' : agentOnline === false ? 'OFFLINE' : 'CONNECTING...'}</span>
             </div>
             {cacheStats && (
               <div className="hidden md:flex items-center gap-2 border-l border-white/10 pl-6 text-slate-400">
@@ -389,16 +389,16 @@ export default function ResearchPage() {
             <svg className="w-3.5 h-3.5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
-            {sidebarOpen ? 'Collapse History' : 'Browse History'}
+            <span className="hidden sm:inline">{sidebarOpen ? 'Collapse' : 'Browse'}</span> History
           </button>
         </div>
       </div>
  
-      <div className="relative z-10 flex-grow w-full px-6 md:px-8 py-8 flex flex-col lg:flex-row gap-6">
+      <div className="relative z-10 flex-grow w-full px-3 sm:px-6 md:px-8 py-5 sm:py-8 flex flex-col lg:flex-row gap-4 sm:gap-6">
  
         {/* SIDEBAR: History Records — shows 3 most recent */}
         {sidebarOpen && (
-          <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-3 bg-black/50 border border-white/5 rounded-3xl p-5 backdrop-blur-xl shadow-2xl overflow-hidden">
+          <aside className="w-full lg:w-72 shrink-0 flex flex-col gap-3 bg-black/50 border border-white/5 rounded-3xl p-4 sm:p-5 backdrop-blur-xl shadow-2xl overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between border-b border-white/5 pb-3">
               <h3 className="font-audiowide text-[9px] font-bold uppercase tracking-[0.25em] text-slate-400">
@@ -466,7 +466,7 @@ export default function ResearchPage() {
 
  
         {/* MAIN PANEL */}
-        <div className="flex-1 flex flex-col gap-6 pr-1 h-full">
+        <div className="flex-1 flex flex-col gap-4 sm:gap-6 min-w-0">
  
           {/* SEARCH BAR CARD */}
           <div className="bg-black/30 backdrop-blur-xl rounded-3xl border border-white/5 p-6 shadow-2xl">
@@ -534,7 +534,7 @@ export default function ResearchPage() {
  
           {/* PIPELINE VIEWPORT */}
           {(status === 'running' || status === 'done' || result) && (
-            <div className="grid lg:grid-cols-[380px_1fr] gap-6 flex-grow">
+            <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-4 sm:gap-6 flex-grow">
  
               {/* LEFT: Visualizer */}
               <div className="flex flex-col gap-6">
