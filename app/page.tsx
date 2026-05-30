@@ -4,6 +4,7 @@ import { Navbar } from '@/src/components/Navbar';
 import { EngineDiagnosticPanel } from '@/src/components/EngineDiagnosticPanel';
 import { RepositoryGalaxyMap } from '@/src/components/RepositoryGalaxyMap';
 import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
   title: 'atlash.ai - Agentic Intelligence Platform',
@@ -57,13 +58,13 @@ export default function HomePage() {
                 atlash.ai builds modern agent-powered web systems that can think through tasks,
                 automate complex workflows, and turn ideas into intelligent digital experiences.
               </p>
-              <button type="button" className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition-transform duration-300 hover:-translate-y-1">
+              <Link href={"/research"} type="button" className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-7 py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition-transform duration-300 hover:-translate-y-1">
                 <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/18 to-white/0 -translate-x-full transition-transform duration-700 group-hover:translate-x-full" />
                 <span className="relative">Explore More</span>
                 <span className="relative flex size-7 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1">
                   &gt;
                 </span>
-              </button>
+              </Link>
             </div>
 
             <aside className="pointer-events-auto w-full self-center justify-self-end border-l border-black/10 pl-6 lg:pl-8">
