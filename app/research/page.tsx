@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import ResearchPage from '@/src/app/(research)/page';
 
 export const metadata: Metadata = {
-  title: 'Research | atlash.ai',
+  title: 'Research | atlas.ai',
   description: 'Run and review multi-agent research sessions.',
 };
 

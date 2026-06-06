@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { usePathname } from 'next/navigation';
 import { TransitionLink } from './TransitionLink';
 import { useIsAuthenticated, useUser } from '../store/authStore';
 import { useLogout } from '../hooks/useAuth';
@@ -21,6 +22,7 @@ export const Navbar = () => {
   const [clipOrigin, setClipOrigin] = useState({ x: 'calc(100% - 48px)', y: '28px' });
   const btnRef = useRef<HTMLButtonElement>(null);
   const isAuthenticated = useIsAuthenticated();
+  const pathname = usePathname();
 
   const user = useUser();
   const logout = useLogout();
@@ -61,26 +63,31 @@ export const Navbar = () => {
     await logout();
   };
 
+  const isRouteActive = (href: string) => {
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
   return (
     <>
-      <div className="fixed top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 z-[1001]">
+      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 md:top-8 md:right-8 z-1001">
         <button
           ref={btnRef}
           type="button"
           onClick={() => { updateClipOrigin(); setIsOpen(!isOpen); }}
           className="flex items-center gap-2 md:gap-3 bg-[#AAFFC7] text-black px-4 py-2.5 sm:px-5 sm:py-3 md:px-6 md:py-3.5 rounded-full hover:scale-105 transition-transform duration-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] cursor-pointer border border-[#AAFFC7]/50"
         >
-          <span className="text-[11px] sm:text-[12px] md:text-[13px] tracking-[0.15em] uppercase font-bold mt-[2px]">
+          <span className="text-[11px] sm:text-[12px] md:text-[13px] tracking-[0.15em] uppercase font-bold mt-0.5">
             {isOpen ? 'Close' : 'Menu'}
           </span>
           <div className="relative size-3.5 sm:size-4 flex items-center justify-center">
             <span
-              className={`absolute h-[2px] w-full bg-black transition-all duration-300 ${
+              className={`absolute h-0.5 w-full bg-black transition-all duration-300 ${
                 isOpen ? 'rotate-45' : '-translate-y-1'
               }`}
             />
             <span
-              className={`absolute h-[2px] w-full bg-black transition-all duration-300 ${
+              className={`absolute h-0.5 w-full bg-black transition-all duration-300 ${
                 isOpen ? '-rotate-45' : 'translate-y-1'
               }`}
             />
@@ -89,7 +96,7 @@ export const Navbar = () => {
       </div>
 
       <nav
-        className="fixed inset-0 bg-[#AAFFC7] z-[1000] flex flex-col justify-center items-center pointer-events-none"
+        className="fixed inset-0 bg-[#AAFFC7] z-1000 pointer-events-none overflow-hidden"
         style={{
           clipPath: isOpen
             ? `circle(200% at ${clipOrigin.x} ${clipOrigin.y})`
@@ -98,87 +105,111 @@ export const Navbar = () => {
           pointerEvents: isOpen ? 'auto' : 'none',
         }}
       >
-        <div className="flex flex-col items-center gap-3 sm:gap-5 md:gap-8 w-full max-w-4xl px-4 sm:px-6 pt-20 sm:pt-0">
-          {links.map((link, i) => (
-            <div key={link.name} className="overflow-hidden py-1 md:py-2">
-              <TransitionLink
-                href={link.href}
-                onClick={() => setIsOpen(false)}
-                className="block text-black text-[clamp(35px,10vw,90px)] font-light leading-none tracking-tighter hover:[text-shadow:0_4px_25px_#67C090] transition-all duration-300"
-                style={{
-                  transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
-                  opacity: isOpen ? 1 : 0,
-                  transition: `transform 0.6s cubic-bezier(0.76, 0, 0.24, 1) ${
-                    isOpen ? 0.3 + i * 0.08 : 0
-                  }s, opacity 0.6s ease ${
-                    isOpen ? 0.3 + i * 0.08 : 0
-                  }s, text-shadow 0.3s ease`,
-                }}
-              >
-                {link.name}
-              </TransitionLink>
+        <div className="relative h-full w-full overflow-y-auto">
+          <div className="min-h-full flex flex-col items-center w-full max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 md:pt-12 pb-6 sm:pb-8">
+            <div className="w-full flex-1 flex flex-col justify-center items-center gap-3 sm:gap-5 md:gap-8">
+              {links.map((link, i) => (
+                <div key={link.name} className="overflow-hidden py-1 md:py-2">
+                  {(() => {
+                    const active = isRouteActive(link.href);
+                    return (
+                  <TransitionLink
+                    href={link.href}
+                    onClick={() => setIsOpen(false)}
+                    aria-current={active ? 'page' : undefined}
+                    className={`block text-[clamp(30px,9vw,90px)] font-light leading-none tracking-tighter transition-all duration-300 ${
+                      active
+                        ? 'text-black [text-shadow:0_6px_28px_#67C090]'
+                        : 'text-black/80 hover:text-black hover:[text-shadow:0_4px_25px_#67C090]'
+                    }`}
+                    style={{
+                      transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
+                      opacity: isOpen ? 1 : 0,
+                      transition: `transform 0.6s cubic-bezier(0.76, 0, 0.24, 1) ${
+                        isOpen ? 0.3 + i * 0.08 : 0
+                      }s, opacity 0.6s ease ${
+                        isOpen ? 0.3 + i * 0.08 : 0
+                      }s, text-shadow 0.3s ease`,
+                    }}
+                  >
+                    {link.name}
+                  </TransitionLink>
+                    );
+                  })()}
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
 
-        <div
-          className="absolute bottom-16 md:bottom-24 flex flex-col items-center gap-4 text-black w-full px-4"
-          style={{
-            opacity: isOpen ? 1 : 0,
-            transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
-            transition: `opacity 0.6s ease ${
-              isOpen ? 0.7 : 0
-            }s, transform 0.6s cubic-bezier(0.76, 0, 0.24, 1) ${
-              isOpen ? 0.7 : 0
-            }s`,
-          }}
-        >
-          {isAuthenticated ? (
-            <>
-              <div className="text-center hidden md:block">
-                <p className="text-sm uppercase tracking-[0.2em] text-black/45">
-                  Signed in as
-                </p>
-                <p className="text-xl font-medium">
-                  {user?.name || user?.email || 'Researcher'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-2xl md:text-4xl font-light leading-none hover:[text-shadow:0_4px_25px_#67C090] transition-all duration-300 cursor-pointer"
-              >
-                Logout
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-              <TransitionLink
-                href="/login"
-                onClick={() => setIsOpen(false)}
-                className="text-2xl md:text-4xl font-light leading-none hover:[text-shadow:0_4px_25px_#67C090] transition-all duration-300"
-              >
-                Login
-              </TransitionLink>
-              <TransitionLink
-                href="/register"
-                onClick={() => setIsOpen(false)}
-                className="text-2xl md:text-4xl font-light leading-none hover:[text-shadow:0_4px_25px_#67C090] transition-all duration-300"
-              >
-                Register
-              </TransitionLink>
+            <div
+              className="mt-8 md:mt-0 md:absolute md:bottom-24 flex flex-col items-center gap-4 text-black w-full px-4"
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
+                transition: `opacity 0.6s ease ${
+                  isOpen ? 0.7 : 0
+                }s, transform 0.6s cubic-bezier(0.76, 0, 0.24, 1) ${
+                  isOpen ? 0.7 : 0
+                }s`,
+              }}
+            >
+              {isAuthenticated ? (
+                <>
+                  <div className="text-center hidden md:block">
+                    <p className="text-sm uppercase tracking-[0.2em] text-black/45">
+                      Signed in as
+                    </p>
+                    <p className="text-xl font-medium">
+                      {user?.name || user?.email || 'Researcher'}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="text-2xl md:text-4xl font-light leading-none hover:[text-shadow:0_4px_25px_#67C090] transition-all duration-300 cursor-pointer"
+                  >
+                    Logout
+                  </button>
+                </>
+              ) : (
+                <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+                  <TransitionLink
+                    href="/login"
+                    onClick={() => setIsOpen(false)}
+                    aria-current={isRouteActive('/login') ? 'page' : undefined}
+                    className={`text-2xl md:text-4xl font-light leading-none transition-all duration-300 ${
+                      isRouteActive('/login')
+                        ? 'text-black [text-shadow:0_6px_28px_#67C090]'
+                        : 'text-black/80 hover:text-black hover:[text-shadow:0_4px_25px_#67C090]'
+                    }`}
+                  >
+                    Login
+                  </TransitionLink>
+                  <TransitionLink
+                    href="/register"
+                    onClick={() => setIsOpen(false)}
+                    aria-current={isRouteActive('/register') ? 'page' : undefined}
+                    className={`text-2xl md:text-4xl font-light leading-none transition-all duration-300 ${
+                      isRouteActive('/register')
+                        ? 'text-black [text-shadow:0_6px_28px_#67C090]'
+                        : 'text-black/80 hover:text-black hover:[text-shadow:0_4px_25px_#67C090]'
+                    }`}
+                  >
+                    Register
+                  </TransitionLink>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div
-          className="absolute bottom-6 md:bottom-12 text-black/40 text-[10px] md:text-sm font-medium tracking-widest uppercase"
-          style={{
-            opacity: isOpen ? 1 : 0,
-            transition: `opacity 0.6s ease ${isOpen ? 0.8 : 0}s`,
-          }}
-        >
-          MultiAgent Research (c) {new Date().getFullYear()}
+            <div
+              className="mt-5 md:mt-0 md:absolute md:bottom-12 text-black/40 text-[10px] md:text-sm font-medium tracking-widest uppercase text-center"
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transition: `opacity 0.6s ease ${isOpen ? 0.8 : 0}s`,
+              }}
+            >
+              MultiAgent Research (c) {new Date().getFullYear()}
+            </div>
+          </div>
         </div>
       </nav>
     </>

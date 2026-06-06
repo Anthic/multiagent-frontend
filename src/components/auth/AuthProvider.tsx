@@ -83,7 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
               className="font-metamorphous text-lg font-bold tracking-widest text-[#11100d] uppercase"
               style={{ letterSpacing: '0.25em' }}
             >
-              atlash.ai
+              atlas.ai
             </h3>
             <p
               className="font-mono text-[9px] uppercase tracking-wider text-black/45 animate-pulse"

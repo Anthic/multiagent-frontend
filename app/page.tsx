@@ -7,7 +7,7 @@ import { TransitionLink } from '@/src/components/TransitionLink';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'atlash.ai - Agentic Intelligence Platform',
+  title: 'atlas.ai - Agentic Intelligence Platform',
   description: 'Build intelligent agent-powered systems for modern digital work.',
 };
 
@@ -49,13 +49,13 @@ export default function HomePage() {
             <div className="max-w-[720px] pointer-events-auto">
               <span className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full bg-black/5 border border-black/10 text-black/70 text-[11px] sm:text-[12px] font-semibold tracking-[0.24em] uppercase mb-5 sm:mb-7 backdrop-blur-md">
                 <span className="size-2 rounded-full bg-[#AAFFC7] shadow-[0_0_18px_rgba(170,255,199,0.95)]" />
-                <span className="font-imperial text-[20px] sm:text-[24px] normal-case tracking-normal leading-none">atlash.ai</span>
+                <span className="font-imperial text-[20px] sm:text-[24px] normal-case tracking-normal leading-none">atlas.ai</span>
               </span>
               <h1 className="font-metamorphous text-[clamp(36px,8vw,104px)] leading-[0.98] tracking-normal text-[#11100d] mb-5 sm:mb-7 max-w-[760px]">
                 Intelligence<br />That Moves<br />With You
               </h1>
               <p className="font-roboto text-sm sm:text-base lg:text-xl text-black/68 leading-[1.75] mb-7 sm:mb-9 max-w-[560px]">
-                atlash.ai builds modern agent-powered web systems that can think through tasks,
+                atlas.ai builds modern agent-powered web systems that can think through tasks,
                 automate complex workflows, and turn ideas into intelligent digital experiences.
               </p>
               <TransitionLink href="/research" className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-6 sm:px-7 py-3.5 sm:py-4 text-sm font-bold uppercase tracking-[0.18em] text-white shadow-[0_18px_45px_rgba(0,0,0,0.22)] transition-transform duration-300 hover:-translate-y-1">
@@ -75,7 +75,7 @@ export default function HomePage() {
                 Build, automate, and connect intelligent digital work.
               </h2>
               <div className="mt-6">
-                <AnimatedDescriptionText text="atlash.ai helps you turn a research question into a guided AI workflow. It can break complex topics into smaller tasks, search and organize useful information, compare ideas, summarize findings, and shape everything into clear next steps. Instead of using AI only for quick answers, this website is designed to support deeper research, smarter automation, and human-controlled decision making from one modern interface." />
+                <AnimatedDescriptionText text="atlas.ai helps you turn a research question into a guided AI workflow. It can break complex topics into smaller tasks, search and organize useful information, compare ideas, summarize findings, and shape everything into clear next steps. Instead of using AI only for quick answers, this website is designed to support deeper research, smarter automation, and human-controlled decision making from one modern interface." />
               </div>
             </aside>
           </div>
@@ -107,7 +107,7 @@ export default function HomePage() {
                 Procedural<br />Optimization
               </h2>
               <p className="text-base sm:text-lg text-black/75 leading-[1.65]">
-                atlash.ai operates a dynamically balanced multi-agent orchestration engine. 
+                atlas.ai operates a dynamically balanced multi-agent orchestration engine. 
                 When a complex research question is processed, the system automatically spawns 
                 specialized agents to index vector search spaces, parse queries, scrape sources, 
                 and synthesize semantic layers in real-time.
@@ -144,7 +144,7 @@ export default function HomePage() {
                 Unified Core Architecture Flow
               </h2>
               <p className="text-base sm:text-lg text-black/75 leading-[1.65]">
-                atlash.ai operates as a fully integrated ecosystem of core repository modules. 
+                atlas.ai operates as a fully integrated ecosystem of core repository modules. 
                 Hover over the constellation nodes below to see how our systems communicate, 
                 what technologies power each layer, and where they deploy!
               </p>
@@ -161,7 +161,7 @@ export default function HomePage() {
         <footer className="w-full border-t border-black/5 pt-8 pb-16 mt-20 flex flex-col sm:flex-row items-center justify-between gap-4 pointer-events-auto">
           <div className="flex flex-col items-center sm:items-start gap-1">
             <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/45 select-none">
-              (c) 2026 atlash.ai. All rights reserved.
+              (c) 2026 atlas.ai. All rights reserved.
             </span>
             <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-black/35">
               Developed by <span className="text-black/60 font-semibold hover:text-[#7c3aed] transition-colors cursor-pointer">Anthic Kumar Singh</span>

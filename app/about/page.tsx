@@ -80,11 +80,11 @@ export default function AboutPage() {
             Deep Tech Intelligence Platform
           </span>
           <h1 className="font-metamorphous text-4xl sm:text-5xl lg:text-6xl font-light text-[#11100d] leading-none tracking-tight">
-            Introducing <span className="font-semibold text-emerald-800">atlash.ai</span><br />
+            Introducing <span className="font-semibold text-emerald-800">atlas.ai</span><br />
             Next-Gen <span className="font-semibold text-purple-800">AI-Driven</span> Research
           </h1>
           <p className="font-roboto text-base text-black/60 mt-6 max-w-2xl leading-relaxed">
-            Welcome to the ultimate state-of-the-art AI-driven workspace. <strong>atlash.ai</strong> combines mathematical modeling, statistical sampling principles, and LangGraph-based multi-agent networks to deliver extremely reliable, deeply synthesized academic and clinical research reports.
+            Welcome to the ultimate state-of-the-art AI-driven workspace. <strong>atlas.ai</strong> combines mathematical modeling, statistical sampling principles, and LangGraph-based multi-agent networks to deliver extremely reliable, deeply synthesized academic and clinical research reports.
           </p>
         </div>
 
@@ -121,13 +121,13 @@ export default function AboutPage() {
             </h2>
             <div className="font-roboto text-sm text-black/70 space-y-4 leading-relaxed">
               <p>
-                Hello, I am <strong>Anthic</strong>, the <strong>Full Stack AI Developer</strong> behind <strong>atlash.ai</strong>. I graduated with a degree in <strong>Statistics</strong> from the esteemed <strong>Mawlana Bhashani Science and Technology University (MBSTU)</strong>. 
+                Hello, I am <strong>Anthic</strong>, the <strong>Full Stack AI Developer</strong> behind <strong>atlas.ai</strong>. I graduated with a degree in <strong>Statistics</strong> from the esteemed <strong>Mawlana Bhashani Science and Technology University (MBSTU)</strong>. 
               </p>
               <p>
-                My background in statistics shaped my perspective on AI validation. In a world saturated with AI hallucinations, raw generation is not enough. Leveraging confidence intervals, data parsing distributions, and truth-integrity metrics, I designed <strong>atlash.ai</strong> as a completely AI-driven autonomous pipeline that prioritizes rigorous factual assessment.
+                My background in statistics shaped my perspective on AI validation. In a world saturated with AI hallucinations, raw generation is not enough. Leveraging confidence intervals, data parsing distributions, and truth-integrity metrics, I designed <strong>atlas.ai</strong> as a completely AI-driven autonomous pipeline that prioritizes rigorous factual assessment.
               </p>
               <p>
-                By combining statistics with premium full stack development, I engineered <strong>atlash.ai</strong> to act as an advanced digital research laboratory. By assigning multiple specialized agent personas, evaluating cross-reference claim trust percentages, and running detailed critiques, it maps out a transparent, bias-free information registry. 
+                By combining statistics with premium full stack development, I engineered <strong>atlas.ai</strong> to act as an advanced digital research laboratory. By assigning multiple specialized agent personas, evaluating cross-reference claim trust percentages, and running detailed critiques, it maps out a transparent, bias-free information registry. 
               </p>
             </div>
 
@@ -194,7 +194,7 @@ export default function AboutPage() {
               High-Performance Full Stack Stack
             </h2>
             <p className="font-roboto text-xs text-black/55 mt-2 leading-relaxed">
-              <strong>atlash.ai</strong> is engineered from the ground up to support massive, concurrent stateful research runs using modern web architectures:
+              <strong>atlas.ai</strong> is engineered from the ground up to support massive, concurrent stateful research runs using modern web architectures:
             </p>
           </div>
 
