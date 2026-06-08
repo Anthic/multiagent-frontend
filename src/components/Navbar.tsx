@@ -106,8 +106,8 @@ export const Navbar = () => {
         }}
       >
         <div className="relative h-full w-full overflow-y-auto">
-          <div className="min-h-full flex flex-col items-center w-full max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 md:pt-12 pb-6 sm:pb-8">
-            <div className="w-full flex-1 flex flex-col justify-center items-center gap-3 sm:gap-5 md:gap-8">
+          <div className="min-h-full flex flex-col items-center w-full max-w-5xl mx-auto px-4 sm:px-6 pt-24 sm:pt-28 md:pt-28 pb-6 sm:pb-8">
+            <div className="w-full flex-1 flex flex-col justify-center items-center gap-3 sm:gap-5 md:gap-8 py-8">
               {links.map((link, i) => (
                 <div key={link.name} className="overflow-hidden py-1 md:py-2">
                   {(() => {
@@ -141,7 +141,7 @@ export const Navbar = () => {
             </div>
 
             <div
-              className="mt-8 md:mt-0 md:absolute md:bottom-24 flex flex-col items-center gap-4 text-black w-full px-4"
+              className="mt-auto flex flex-col items-center gap-4 text-black w-full px-4 pb-4"
               style={{
                 opacity: isOpen ? 1 : 0,
                 transform: isOpen ? 'translateY(0)' : 'translateY(20px)',
@@ -201,7 +201,7 @@ export const Navbar = () => {
             </div>
 
             <div
-              className="mt-5 md:mt-0 md:absolute md:bottom-12 text-black/40 text-[10px] md:text-sm font-medium tracking-widest uppercase text-center"
+              className="mt-4 pb-6 text-black/40 text-[10px] md:text-sm font-medium tracking-widest uppercase text-center"
               style={{
                 opacity: isOpen ? 1 : 0,
                 transition: `opacity 0.6s ease ${isOpen ? 0.8 : 0}s`,
