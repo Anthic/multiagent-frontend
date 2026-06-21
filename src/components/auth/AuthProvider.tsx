@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -26,10 +26,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const { isLoading, isFetched } = useCurrentUser();
   const isInitialized = useAuthStore((s) => s.isInitialized);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const ready = isFetched || isInitialized;
 
   // â”€â”€â”€ Route Guarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
-    if (mounted) {
+    if (mounted && ready) {
       const protectedRoutes = ['/dashboard', '/research'];
       const isProtected = protectedRoutes.some(route => pathname?.startsWith(route));
 
@@ -37,12 +38,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         router.push('/login');
       }
     }
-  }, [pathname, isAuthenticated, router, mounted]);
+  }, [pathname, isAuthenticated, router, mounted, ready]);
 
   // â”€â”€â”€ Step 2: show a spinner only while an active session is being validated â”€
   // `isFetched` becomes true on both success AND error, so the spinner always
   // clears once the /auth/me request settles (or is skipped when not logged in).
-  const ready = isFetched || isInitialized;
 
   // Show nothing (no HTML) until the client has hydrated â€” avoids mismatch
   if (!mounted) return null;
