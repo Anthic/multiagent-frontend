@@ -22,16 +22,35 @@ export default function DashboardPage() {
   const isAuthenticated = useIsAuthenticated();
   
   // TanStack Query: cached across navigations, no duplicate requests on re-mount
-  const { data: historyData, isLoading: loading } = useResearchHistory(50);
+  const { data: historyData, isLoading: loading } = useResearchHistory(50, isAuthenticated);
   const history: Job[] = historyData?.data?.records ?? [];
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMetric, setActiveMetric] = useState<'quality' | 'factCheck' | 'duration'>('quality');
   const [hoveredPoint, setHoveredPoint] = useState<HoveredMetricPoint | null>(null);
 
-  // Calculate statistics
-  const totalReports = history.length;
-  const completedReports = history.filter((h) => h.result);
+  // Helper to parse created_at timestamp safely
+  const parseCreatedAt = (val: any): Date => {
+    if (!val) return new Date();
+    const num = Number(val);
+    if (!isNaN(num)) {
+      return new Date(num < 9999999999 ? num * 1000 : num);
+    }
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? new Date() : d;
+  };
+
+  // Filter history based on search query first
+  const filteredHistory = history.filter((h) => {
+    const topic = h.result?.topic || '';
+    const jobId = h.job_id || '';
+    const query = searchQuery.toLowerCase();
+    return topic.toLowerCase().includes(query) || jobId.toLowerCase().includes(query);
+  });
+
+  // Calculate statistics from the filtered set
+  const totalReports = filteredHistory.length;
+  const completedReports = filteredHistory.filter((h) => h.result);
   
   const avgCritique = completedReports.length > 0
     ? (completedReports.reduce((acc, h) => acc + (h.result?.critique_score || 0), 0) / completedReports.length).toFixed(1)
@@ -44,12 +63,6 @@ export default function DashboardPage() {
   const avgTime = completedReports.length > 0
     ? (completedReports.reduce((acc, h) => acc + (h.result?.time_sec || 0), 0) / completedReports.length).toFixed(0)
     : '0';
-
-  // Filter history based on search query
-  const filteredHistory = history.filter((h) => {
-    const topic = h.result?.topic || '';
-    return topic.toLowerCase().includes(searchQuery.toLowerCase());
-  });
 
   // Mock telemetry for empty-state preview
   const mockTelemetry = [
@@ -67,7 +80,7 @@ export default function DashboardPage() {
         quality: h.result?.critique_score || 0,
         factCheck: (h.result?.fact_check_score || 0) * 100,
         duration: h.result?.time_sec || 0,
-        date: new Date(h.created_at * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        date: parseCreatedAt(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
       }))
     : mockTelemetry;
 
@@ -491,7 +504,7 @@ export default function DashboardPage() {
                     const critiqueScore = job.result?.critique_score || 0;
                     const factCheckScore = job.result?.fact_check_score || 0;
                     const timeSec = job.result?.time_sec || 0;
-                    const date = new Date(job.created_at * 1000).toLocaleDateString('en-US', {
+                    const date = parseCreatedAt(job.created_at).toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
@@ -545,7 +558,7 @@ export default function DashboardPage() {
                   const critiqueScore = job.result?.critique_score || 0;
                   const factCheckScore = job.result?.fact_check_score || 0;
                   const timeSec = job.result?.time_sec || 0;
-                  const date = new Date(job.created_at * 1000).toLocaleDateString('en-US', {
+                  const date = parseCreatedAt(job.created_at).toLocaleDateString('en-US', {
                     month: 'short',
                     day: 'numeric',
                     year: 'numeric',

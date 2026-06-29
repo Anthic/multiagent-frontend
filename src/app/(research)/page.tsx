@@ -13,7 +13,7 @@ import { ResearchQuota } from "@/src/types/research"
 import { useJobStatus, useResearchHistory } from "@/src/hooks/useResearch"
 import { ActiveTab, DiagnosticsState, UIState } from "@/src/types/researchState"
 import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useReducer, useState } from "react"
+import { useEffect, useMemo, useReducer, useState } from "react"
 import { useSearchParams } from 'next/navigation';
 
 
@@ -46,7 +46,7 @@ export default function ResearchPage() {
   const queryClient = useQueryClient();
 
   // TanStack Query: history — cached, deduped, refetched on window focus
-  const { data: historyQueryData, refetch: refetchHistory } = useResearchHistory(10);
+  const { data: historyQueryData, refetch: refetchHistory } = useResearchHistory(10, isAuthenticated);
   const history = historyQueryData?.data?.records ?? [];
   const historyCount = historyQueryData?.data?.count ?? 0;
 
@@ -75,6 +75,16 @@ export default function ResearchPage() {
       hour: 'numeric',
       minute: '2-digit',
     });
+  };
+
+  const parseCreatedAt = (val: any): Date => {
+    if (!val) return new Date();
+    const num = Number(val);
+    if (!isNaN(num)) {
+      return new Date(num < 9999999999 ? num * 1000 : num);
+    }
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? new Date() : d;
   };
 
   const getQuotaFromError = (err: unknown): ResearchQuota | null => {
@@ -251,6 +261,27 @@ export default function ResearchPage() {
   const { topic, activeTab, sidebarOpen } = uiState;
   const { agentOnline, cacheStats } = diagnostics;
   const quotaExhausted = quota?.remaining === 0;
+
+  // Pre-inject verified URLs as markdown links — runs only when result changes
+  const reportContent = useMemo(() => {
+    if (!result?.report) return '';
+    let text = result.report;
+    (result.verified_urls ?? []).forEach((url, idx) => {
+      if (!url) return;
+      text = text.replace(new RegExp(`\\[Source ${idx + 1}\\](?!\\()`, 'g'), `[Source ${idx + 1}](${url})`);
+    });
+    return text;
+  }, [result]);
+
+  const critiqueContent = useMemo(() => {
+    if (!result?.critique) return '';
+    let text = result.critique;
+    (result.verified_urls ?? []).forEach((url, idx) => {
+      if (!url) return;
+      text = text.replace(new RegExp(`\\[Source ${idx + 1}\\](?!\\()`, 'g'), `[Source ${idx + 1}](${url})`);
+    });
+    return text;
+  }, [result]);
  
  if (!isAuthenticated) {
     return (
@@ -349,13 +380,13 @@ export default function ResearchPage() {
             </div>
 
             {/* Records — only last 3 */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto pr-1.5 scrollbar-thin scrollbar-thumb-white/10">
               {history.length === 0 ? (
                 <div className="text-center py-8 text-[10px] font-mono text-slate-500 uppercase tracking-widest">
                   No Saved Research
                 </div>
               ) : (
-                history.slice(0, 3).map((h, idx) => (
+                history.map((h, idx) => (
                   <button
                     key={h.job_id}
                     onClick={() => handleLoadHistoryJob(h.job_id)}
@@ -371,7 +402,7 @@ export default function ResearchPage() {
                         </div>
                         <div className="flex items-center justify-between mt-2">
                           <span className="font-mono text-[9px] text-slate-500">
-                            {new Date(h.created_at * 1000).toLocaleDateString()}
+                            {parseCreatedAt(h.created_at).toLocaleDateString()}
                           </span>
                           {h.result?.critique_score !== undefined && (
                             <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold font-mono text-[8px] border border-emerald-500/20">
@@ -390,7 +421,7 @@ export default function ResearchPage() {
             {historyCount > 3 && (
               <div className="border-t border-white/5 pt-3 mt-1">
                 <a
-                  href="/dashboard/history"
+                  href="/dashboard"
                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] text-slate-400 hover:text-white font-mono text-[9px] uppercase tracking-widest transition-all duration-200"
                 >
                   View All {historyCount} Sessions
@@ -536,21 +567,7 @@ export default function ResearchPage() {
                       {/* REPORT */}
                       {activeTab === 'report' && result && (
                         <div className="animate-fadeIn prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal break-words">
-                          <CustomMarkdown 
-                            content={(() => {
-                              let reportText = result.report;
-                              if (result.verified_urls && result.verified_urls.length > 0) {
-                                result.verified_urls.forEach((url, index) => {
-                                  if (url) {
-                                    const sourceNum = index + 1;
-                                    const regex = new RegExp(`\\[Source ${sourceNum}\\]`, 'g');
-                                    reportText = reportText.replace(regex, `[Source ${sourceNum}](${url})`);
-                                  }
-                                });
-                              }
-                              return reportText;
-                            })()} 
-                          />
+                          <CustomMarkdown content={reportContent} />
                         </div>
                       )}
  
@@ -561,21 +578,7 @@ export default function ResearchPage() {
                             <h3 className="font-audiowide text-base font-extrabold text-white uppercase tracking-wider mb-2">
                               System Review Feedback:
                             </h3>
-                            <CustomMarkdown 
-                              content={(() => {
-                                let critiqueText = result.critique;
-                                if (result.verified_urls && result.verified_urls.length > 0) {
-                                  result.verified_urls.forEach((url, index) => {
-                                    if (url) {
-                                      const sourceNum = index + 1;
-                                      const regex = new RegExp(`\\[Source ${sourceNum}\\]`, 'g');
-                                      critiqueText = critiqueText.replace(regex, `[Source ${sourceNum}](${url})`);
-                                    }
-                                  });
-                                }
-                                return critiqueText;
-                              })()} 
-                            />
+                            <CustomMarkdown content={critiqueContent} />
                           </div>
                           <div className="flex flex-col gap-4 shrink-0">
                             <ScoreMeter score={result.critique_score} type="critique" />

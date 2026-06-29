@@ -42,10 +42,11 @@ export const useJobStatus = (jobId : string |  null) => {
 }
 
 
-export const useResearchHistory = (limit = 10) => {
+export const useResearchHistory = (limit = 10, enabled = true) => {
     return useQuery ( {
         queryKey : researchQueryKeys.history(limit),
-        queryFn : () => ResearchService.getHistory(limit)
+        queryFn : () => ResearchService.getHistory(limit),
+        enabled
     })
 }
 
