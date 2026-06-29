@@ -1,6 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Navbar } from '@/src/components/Navbar';
 import { TransitionLink } from '@/src/components/TransitionLink';
 import { motion } from 'framer-motion';
@@ -98,11 +99,13 @@ export default function AboutPage() {
               className="relative w-full max-w-[380px] aspect-[4/5] rounded-[36px] overflow-hidden border-2 border-white shadow-[0_30px_70px_rgba(0,0,0,0.12)] bg-[#ede8d8] p-3"
             >
               <div className="w-full h-full rounded-[28px] overflow-hidden relative group">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
+                <Image 
                   src="/about us.jpeg" 
                   alt="Anthic - Founder & Full Stack AI Developer"
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 380px"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-6">
                   <span className="font-mono text-[9px] uppercase tracking-widest text-[#AAFFC7] font-bold">Founder Profile</span>

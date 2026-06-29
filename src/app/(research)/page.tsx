@@ -10,8 +10,10 @@ import { ResearchService } from "@/src/services/researchService"
 import { useAuthStore, useIsAuthenticated } from "@/src/store/authStore"
 import { ApiError } from "@/src/types/api"
 import { ResearchQuota } from "@/src/types/research"
-import { ActiveTab, DiagnosticsState, HistoryState, JobState, UIState } from "@/src/types/researchState"
-import { useCallback, useEffect, useReducer, useRef, useState } from "react"
+import { useJobStatus, useResearchHistory } from "@/src/hooks/useResearch"
+import { ActiveTab, DiagnosticsState, UIState } from "@/src/types/researchState"
+import { useQueryClient } from "@tanstack/react-query"
+import { useEffect, useReducer, useState } from "react"
 import { useSearchParams } from 'next/navigation';
 
 
@@ -38,14 +40,18 @@ export default function ResearchPage() {
         cacheStats : null
     })
 
-    //history
-      const [historyState, setHistoryState] = useState<HistoryState>({
-    records: [],
-    count: 0,
-  });
+  // Active job ID drives TanStack Query polling — no manual setInterval needed
+  const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [quota, setQuota] = useState<ResearchQuota | null>(null);
- 
-  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const queryClient = useQueryClient();
+
+  // TanStack Query: history — cached, deduped, refetched on window focus
+  const { data: historyQueryData, refetch: refetchHistory } = useResearchHistory(10);
+  const history = historyQueryData?.data?.records ?? [];
+  const historyCount = historyQueryData?.data?.count ?? 0;
+
+  // TanStack Query: job polling — refetchInterval stops on done/failed automatically
+  const { data: jobQueryData } = useJobStatus(activeJobId);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
   const setTab = (tab: ActiveTab) =>
@@ -86,125 +92,59 @@ export default function ResearchPage() {
     });
   };
  
-  const fetchHistory = useCallback(async () => {
-    try {
-      const res = await ResearchService.getHistory(10);
-      if (res.success && res.data) {
-        setHistoryState({
-          records: res.data.records || [],
-          count: res.data.count || 0,
-        });
-      }
-    } catch (err) {
-      console.error('Failed to load history', err);
-    }
-  }, []);
- 
+  // ── Mount effect: fetch diagnostics + quota in parallel (no waterfall) ─────
   useEffect(() => {
     let isMounted = true;
 
     void (async () => {
       try {
-        const healthRes = await api.get<{ status: string }>('/research/health');
+        const [healthRes, cacheRes, quotaRes] = await Promise.all([
+          api.get<{ status: string }>('/research/health').catch(() => null),
+          api.get<{ total_keys?: number; hit_rate?: string }>('/research/cache-stats').catch(() => null),
+          isAuthenticated ? ResearchService.getQuota().catch(() => null) : Promise.resolve(null),
+        ]);
+
         if (!isMounted) return;
 
-        setDiagnostics((prev) => ({ ...prev, agentOnline: healthRes.success }));
+        setDiagnostics({
+          agentOnline: healthRes?.success ?? false,
+          cacheStats: cacheRes?.success && cacheRes.data ? cacheRes.data : null,
+        });
+
+        if (quotaRes?.success && quotaRes.data) setQuota(quotaRes.data);
       } catch {
-        if (!isMounted) return;
-
-        setDiagnostics((prev) => ({ ...prev, agentOnline: false }));
-      }
-
-      try {
-        const cacheRes = await api.get<{
-          total_keys?: number;
-          hit_rate?: string;
-        }>('/research/cache-stats');
-
-        if (!isMounted) return;
-
-        if (cacheRes.success && cacheRes.data) {
-          setDiagnostics((prev) => ({ ...prev, cacheStats: cacheRes.data }));
-        }
-      } catch {
-        if (!isMounted) return;
+        if (isMounted) setDiagnostics((prev) => ({ ...prev, agentOnline: false }));
       }
     })();
 
-    if (isAuthenticated) {
-      void (async () => {
-        try {
-          const [res, quotaRes] = await Promise.all([
-            ResearchService.getHistory(10),
-            ResearchService.getQuota(),
-          ]);
-          if (!isMounted) return;
-
-          if (res.success && res.data) {
-            setHistoryState({
-              records: res.data.records || [],
-              count: res.data.count || 0,
-            });
-          }
-
-          if (quotaRes.success && quotaRes.data) {
-            setQuota(quotaRes.data);
-          }
-        } catch (err: unknown) {
-          if (!isMounted) return;
-
-          console.error('Failed to load history', err);
-        }
-      })();
-    }
-
-    return () => {
-      isMounted = false;
-
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-    };
+    return () => { isMounted = false; };
   }, [isAuthenticated]);
- 
-  // ── Polling ───────────────────────────────────────────────────────────────
-  const startPolling = useCallback(
-    (jobId: string) => {
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
- 
-      pollIntervalRef.current = setInterval(async () => {
-        try {
-          const pollRes = await ResearchService.getJobStatus(jobId);
-          if (!pollRes.success || !pollRes.data) return;
- 
-          const job = pollRes.data;
- 
-          if (job.status === 'done') {
-            clearInterval(pollIntervalRef.current!);
-            dispatch({ type: 'DONE', result: job.result });
-            setTab('report');
-            fetchHistory();
-          } else if (job.status === 'failed') {
-            clearInterval(pollIntervalRef.current!);
-            dispatch({ type: 'FAILED', error: job.error || 'Pipeline crashed' });
-          } else {
-            const payload: Pick<JobState, 'progress' | 'stage' | 'status' | 'rewrittenQueries'> = {
-              progress: job.progress || 0,
-              stage: job.stage || 'running',
-              status: job.status,
-              rewrittenQueries: job.result?.rewritten_queries || [],
-            };
- 
-            dispatch({
-              type: 'POLL_UPDATE',
-              payload,
-            });
-          }
-        } catch (err) {
-          console.error('Polling error', err);
-        }
-      }, 5000);
-    },
-    [fetchHistory]
-  );
+
+  // ── React to TanStack Query job updates (replaces manual setInterval) ──────
+  useEffect(() => {
+    const job = jobQueryData?.data;
+    if (!job) return;
+
+    if (job.status === 'done') {
+      dispatch({ type: 'DONE', result: job.result });
+      setTab('report');
+      setActiveJobId(null);
+      refetchHistory();
+    } else if (job.status === 'failed') {
+      dispatch({ type: 'FAILED', error: job.error || 'Pipeline crashed' });
+      setActiveJobId(null);
+    } else if (job.status === 'running' || job.status === 'queued') {
+      dispatch({
+        type: 'POLL_UPDATE',
+        payload: {
+          progress: job.progress || 0,
+          stage: job.stage || 'running',
+          status: job.status,
+          rewrittenQueries: job.result?.rewritten_queries || [],
+        },
+      });
+    }
+  }, [jobQueryData, refetchHistory]);
 
  
   // ── Start Research ────────────────────────────────────────────────────────
@@ -223,7 +163,7 @@ export default function ResearchPage() {
       if (startRes.success && startRes.data) {
         if (startRes.data.quota) setQuota(startRes.data.quota);
         dispatch({ type: 'SET_JOB_ID', jobId: startRes.data.job_id });
-        startPolling(startRes.data.job_id);
+        setActiveJobId(startRes.data.job_id); // activates TanStack Query polling
       } else {
         throw new Error(startRes.message || 'Could not start research pipeline');
       }
@@ -310,7 +250,6 @@ export default function ResearchPage() {
   const { status, progress, stage, error, result, rewrittenQueries, plan } = jobState;
   const { topic, activeTab, sidebarOpen } = uiState;
   const { agentOnline, cacheStats } = diagnostics;
-  const { records: history, count: historyCount } = historyState;
   const quotaExhausted = quota?.remaining === 0;
  
  if (!isAuthenticated) {

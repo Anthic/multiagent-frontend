@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useCurrentUser } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
@@ -17,10 +17,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Zustand persist reads from localStorage which doesn't exist on the server.
   // Rendering children before `mounted` prevents hydration mismatches.
   const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    const timeoutId = window.setTimeout(() => setMounted(true), 0);
-
-    return () => window.clearTimeout(timeoutId);
+  useLayoutEffect(() => {
+    setMounted(true);
   }, []);
 
   const { isLoading, isFetched } = useCurrentUser();
@@ -28,7 +26,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const ready = isFetched || isInitialized;
 
-  // â”€â”€â”€ Route Guarding â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+ 
   useEffect(() => {
     if (mounted && ready) {
       const protectedRoutes = ['/dashboard', '/research'];

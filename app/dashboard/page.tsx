@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Navbar } from '@/src/components/Navbar';
-import { ResearchService } from '@/src/services/researchService';
+import { useResearchHistory } from '@/src/hooks/useResearch';
 import { useUser, useIsAuthenticated } from '@/src/store/authStore';
 import { Job } from '@/src/types/research';
 import { TransitionLink } from '@/src/components/TransitionLink';
@@ -21,29 +21,13 @@ export default function DashboardPage() {
   const user = useUser();
   const isAuthenticated = useIsAuthenticated();
   
-  const [history, setHistory] = useState<Job[]>([]);
-  const [loading, setLoading] = useState(true);
+  // TanStack Query: cached across navigations, no duplicate requests on re-mount
+  const { data: historyData, isLoading: loading } = useResearchHistory(50);
+  const history: Job[] = historyData?.data?.records ?? [];
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMetric, setActiveMetric] = useState<'quality' | 'factCheck' | 'duration'>('quality');
   const [hoveredPoint, setHoveredPoint] = useState<HoveredMetricPoint | null>(null);
-
-  useEffect(() => {
-    async function fetchHistory() {
-      try {
-        const res = await ResearchService.getHistory(50);
-        if (res.success && res.data) {
-          setHistory(res.data.records || []);
-        }
-      } catch (err) {
-        console.error('Failed to load history:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    if (isAuthenticated) {
-      fetchHistory();
-    }
-  }, [isAuthenticated]);
 
   // Calculate statistics
   const totalReports = history.length;
