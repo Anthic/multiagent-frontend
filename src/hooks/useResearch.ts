@@ -45,7 +45,7 @@ export const useJobStatus = (jobId : string |  null) => {
         const status = query.state.data?.data?.status
         if (status === 'done' || status === "failed") return false
 
-        return 5000
+        return 2000  // 2s polling — fast enough for both modes, minimal detection lag
       
     },
     staleTime : 5000
