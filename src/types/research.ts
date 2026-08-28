@@ -1,4 +1,4 @@
-﻿
+
 
 export type JobStatus = 'queued' | 'running' | 'done' | 'failed';
 
@@ -25,6 +25,7 @@ export interface Job {
 
 export interface StartResearchPayload {
   topic: string;
+  mode?: 'fast' | 'deep';
 }
 
 export interface ResearchQuota {

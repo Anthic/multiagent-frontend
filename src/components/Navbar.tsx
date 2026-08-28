@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 import { TransitionLink } from './TransitionLink';
 import { useIsAuthenticated, useUser } from '../store/authStore';
 import { useLogout } from '../hooks/useAuth';
+import { useWalletStore } from '../store/walletStore';
+import { TopUpModal } from './wallet/TopUpModal';
 
 const publicLinks = [
   { name: 'Home', href: '/' },
@@ -13,6 +15,8 @@ const publicLinks = [
 const authLinks = [
   { name: 'Home', href: '/' },
   { name: 'Research', href: '/research' },
+  { name: 'Paper Studio', href: '/papers' },
+  { name: 'Notes', href: '/notes' },
   { name: 'Dashboard', href: '/dashboard' },
   { name: 'About', href: '/about' },
 ];
@@ -26,7 +30,14 @@ export const Navbar = () => {
 
   const user = useUser();
   const logout = useLogout();
+  const { balanceBDT, fetchWalletBalance, openTopUpModal } = useWalletStore();
   const links = isAuthenticated ? authLinks : publicLinks;
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchWalletBalance();
+    }
+  }, [isAuthenticated, fetchWalletBalance]);
 
   const updateClipOrigin = useCallback(() => {
     if (!btnRef.current) return;
@@ -70,7 +81,24 @@ export const Navbar = () => {
 
   return (
     <>
-      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 md:top-8 md:right-8 z-1001">
+      <TopUpModal />
+
+      <div className="fixed top-3 right-3 sm:top-6 sm:right-6 md:top-8 md:right-8 z-1001 flex items-center gap-2 sm:gap-3">
+        {isAuthenticated && (
+          <button
+            type="button"
+            onClick={() => openTopUpModal()}
+            className="flex items-center gap-1.5 bg-black/80 hover:bg-black text-white px-3 py-2 sm:px-4 sm:py-2.5 rounded-full border border-white/15 backdrop-blur-md transition-all shadow-lg hover:scale-105 cursor-pointer text-xs"
+            title="Click to recharge wallet"
+          >
+            <span className="text-[#AAFFC7] font-bold">৳</span>
+            <span className="font-semibold tracking-wide">{balanceBDT.toFixed(2)}</span>
+            <span className="text-[10px] bg-[#AAFFC7]/20 text-[#AAFFC7] px-1.5 py-0.5 rounded-full font-medium ml-0.5">
+              + Top-up
+            </span>
+          </button>
+        )}
+
         <button
           ref={btnRef}
           type="button"

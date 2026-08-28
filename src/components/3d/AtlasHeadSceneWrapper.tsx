@@ -11,32 +11,13 @@ const AtlasHeadScene = dynamic(
 );
 
 export function AtlasHeadSceneWrapper() {
-  const [shouldMountScene, setShouldMountScene] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    let idleId: number | undefined;
-
-    const timeoutId = window.setTimeout(() => {
-      if ('requestIdleCallback' in window) {
-        idleId = window.requestIdleCallback(
-          () => setShouldMountScene(true),
-          { timeout: 1200 },
-        );
-        return;
-      }
-
-      setShouldMountScene(true);
-    }, 1050);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-      if (idleId && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(idleId);
-      }
-    };
+    setMounted(true);
   }, []);
 
-  if (!shouldMountScene) return null;
+  if (!mounted) return null;
 
   return <AtlasHeadScene />;
 }

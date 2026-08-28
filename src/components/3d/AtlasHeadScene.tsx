@@ -12,14 +12,6 @@ export function AtlasHeadScene() {
     if (typeof window === 'undefined') return;
     if (!canvasRef.current) return;
 
-    // Guard against React Strict Mode's double-invocation:
-    // cleanup calls renderer.forceContextLoss() which permanently poisons the canvas context.
-    // On the Strict Mode re-mount, we detect the lost context and bail out safely.
-    const existingCtx =
-      canvasRef.current.getContext('webgl2') ??
-      canvasRef.current.getContext('webgl');
-    if (existingCtx?.isContextLost()) return;
-
     const modelGroup = new THREE.Group();
     let particleSystem: THREE.Points | null = null;
     const particleData: Array<{ x: number; y: number; z: number; vx: number; vy: number; vz: number }> = [];
@@ -496,10 +488,7 @@ export function AtlasHeadScene() {
         scene.remove(particleSystem);
       }
 
-      // forceContextLoss() tells the browser to reclaim the GPU slot.
-      // renderer.dispose() alone only frees JS-side Three.js objects — it does NOT
-      // release the underlying WebGLRenderingContext. Browsers cap contexts at ~16.
-      renderer.forceContextLoss();
+      // renderer.dispose() frees JS-side Three.js objects
       renderer.dispose();
     };
   }, []);
@@ -516,12 +505,12 @@ export function AtlasHeadScene() {
           left: 0,
           width: '100vw',
           height: '100vh',
-          zIndex: 0,
+          zIndex: 1,
           pointerEvents: 'none',
           filter: 'contrast(1.05) brightness(1.1)',
           overflow: 'hidden',
-          opacity: 0,
-          transition: 'opacity 900ms ease'
+          opacity: 1,
+          transition: 'opacity 500ms ease'
         }}
       >
         <canvas ref={canvasRef} style={{ width: '100%', height: '100%', display: 'block' }} />

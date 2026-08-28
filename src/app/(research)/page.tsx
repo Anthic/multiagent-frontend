@@ -8,6 +8,7 @@ import { api } from "@/src/lib/api"
 import { initalJobState, jobReducer } from "@/src/reducer/jobReducer"
 import { ResearchService } from "@/src/services/researchService"
 import { useAuthStore, useIsAuthenticated } from "@/src/store/authStore"
+import { useWalletStore } from "@/src/store/walletStore"
 import { ApiError } from "@/src/types/api"
 import { ResearchQuota } from "@/src/types/research"
 import { useJobStatus, useResearchHistory } from "@/src/hooks/useResearch"
@@ -33,6 +34,8 @@ export default function ResearchPage() {
         activeTab : 'report',
         sidebarOpen : true
     })
+
+    const [researchMode, setResearchMode] = useState<'fast' | 'deep'>('fast');
 
     //diagonostic state management
     const [diagnostics, setDiagnostics] = useState<DiagnosticsState>({
@@ -156,42 +159,44 @@ export default function ResearchPage() {
     }
   }, [jobQueryData, refetchHistory]);
 
- 
   // ── Start Research ────────────────────────────────────────────────────────
   const handleStartResearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uiState.topic.trim()) return;
-    if (quota?.remaining === 0) {
-      showQuotaToast(quota);
+
+    if (isBlocked) {
+      openTopUpModal(10, 'Daily free research limit reached. Please top up ৳10 BDT to continue research.');
       return;
     }
  
     dispatch({ type: 'START_RESEARCH' }); 
  
     try {
-      const startRes = await ResearchService.startResearch({ topic: uiState.topic });
+      const startRes = await ResearchService.startResearch({
+        topic: uiState.topic,
+        mode: researchMode,
+      });
       if (startRes.success && startRes.data) {
         if (startRes.data.quota) setQuota(startRes.data.quota);
         dispatch({ type: 'SET_JOB_ID', jobId: startRes.data.job_id });
         setActiveJobId(startRes.data.job_id); // activates TanStack Query polling
+        fetchWalletBalance();
       } else {
         throw new Error(startRes.message || 'Could not start research pipeline');
       }
     } catch (err: unknown) {
-      const quotaInfo = getQuotaFromError(err);
-      if (quotaInfo) setQuota(quotaInfo);
-
       const apiErr = err as Partial<ApiError>;
-      if (apiErr.statusCode === 429 || quotaInfo?.remaining === 0) {
-        showQuotaToast(quotaInfo);
+      if (apiErr.statusCode === 402) {
+        openTopUpModal(10, apiErr.message || 'Daily free research limit reached. Top up ৳10 BDT to continue.');
+      } else if (apiErr.statusCode === 429) {
+        showQuotaToast(quota);
       }
 
       const message = err instanceof Error ? err.message : 'Failed to trigger the multi-agent orchestrator';
-
       dispatch({ type: 'FAILED', error: message });
     }
   };
- 
+
   // ── Load History Job ──────────────────────────────────────────────────────
   // NOTE: We use getJobStatus (GET /job/{jobId}) instead of getHistoryById
   // because the Python /history/{id} endpoint expects a numeric DB id,
@@ -260,15 +265,23 @@ export default function ResearchPage() {
   const { status, progress, stage, error, result, rewrittenQueries, plan } = jobState;
   const { topic, activeTab, sidebarOpen } = uiState;
   const { agentOnline, cacheStats } = diagnostics;
-  const quotaExhausted = quota?.remaining === 0;
 
-  // Pre-inject verified URLs as markdown links — runs only when result changes
+  const { balanceBDT, openTopUpModal, fetchWalletBalance } = useWalletStore();
+  const isFreeQuotaExhausted = quota?.remaining === 0;
+  const hasPaidBalance = balanceBDT >= 10;
+  const isBlocked = isFreeQuotaExhausted && !hasPaidBalance;
+
+  // Pre-inject verified URLs as clickable markdown links for [1], [^1], [Source 1], etc.
   const reportContent = useMemo(() => {
     if (!result?.report) return '';
     let text = result.report;
-    (result.verified_urls ?? []).forEach((url, idx) => {
+    const urls = result.verified_urls ?? [];
+    urls.forEach((url, idx) => {
       if (!url) return;
-      text = text.replace(new RegExp(`\\[Source ${idx + 1}\\](?!\\()`, 'g'), `[Source ${idx + 1}](${url})`);
+      const num = idx + 1;
+      // Match [Source 1], [Source: 1], [1], [^1] not already wrapped in markdown link
+      text = text.replace(new RegExp(`\\[Source\\s*:?\\s*${num}\\](?!\\()`, 'gi'), `[Source ${num}](${url})`);
+      text = text.replace(new RegExp(`\\[\\^?${num}\\](?!\\()`, 'g'), `[[${num}]](${url})`);
     });
     return text;
   }, [result]);
@@ -276,9 +289,12 @@ export default function ResearchPage() {
   const critiqueContent = useMemo(() => {
     if (!result?.critique) return '';
     let text = result.critique;
-    (result.verified_urls ?? []).forEach((url, idx) => {
+    const urls = result.verified_urls ?? [];
+    urls.forEach((url, idx) => {
       if (!url) return;
-      text = text.replace(new RegExp(`\\[Source ${idx + 1}\\](?!\\()`, 'g'), `[Source ${idx + 1}](${url})`);
+      const num = idx + 1;
+      text = text.replace(new RegExp(`\\[Source\\s*:?\\s*${num}\\](?!\\()`, 'gi'), `[Source ${num}](${url})`);
+      text = text.replace(new RegExp(`\\[\\^?${num}\\](?!\\()`, 'g'), `[[${num}]](${url})`);
     });
     return text;
   }, [result]);
@@ -441,9 +457,40 @@ export default function ResearchPage() {
           {/* SEARCH BAR CARD */}
           <div className="bg-black/30 backdrop-blur-xl rounded-3xl border border-white/5 p-6 shadow-2xl">
             <form onSubmit={handleStartResearch} className="flex flex-col gap-4">
-              <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">
-                PROCEED MULTI-AGENT INQUIRY
-              </span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <span className="font-mono text-[9px] font-bold uppercase tracking-[0.2em] text-slate-400">
+                  PROCEED MULTI-AGENT INQUIRY
+                </span>
+
+                {/* Fast Mode vs Deep Mode Selector */}
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-[9px] uppercase tracking-wider text-slate-500">Mode:</span>
+                  <button
+                    type="button"
+                    onClick={() => setResearchMode('fast')}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      researchMode === 'fast'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 shadow-sm shadow-emerald-500/20'
+                        : 'bg-white/5 text-slate-400 border border-white/5 hover:text-slate-200'
+                    }`}
+                  >
+                    <span>⚡</span>
+                    <span>Fast Mode (~15s)</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setResearchMode('deep')}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      researchMode === 'deep'
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/50 shadow-sm shadow-purple-500/20'
+                        : 'bg-white/5 text-slate-400 border border-white/5 hover:text-slate-200'
+                    }`}
+                  >
+                    <span>🔬</span>
+                    <span>Deep Academic (Full)</span>
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                   <input
@@ -462,23 +509,43 @@ export default function ResearchPage() {
                 </div>
                 <button
                   type="submit"
-                  disabled={status === 'running' || status === 'queued' || !topic.trim() || quotaExhausted}
-                  className="px-8 py-4 rounded-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] text-white font-bold tracking-widest text-xs uppercase shadow-[0_12px_24px_rgba(16,185,129,0.2)] transition-all duration-300 disabled:opacity-40 disabled:scale-100 disabled:pointer-events-none cursor-pointer"
+                  disabled={status === 'running' || status === 'queued' || !topic.trim() || isBlocked}
+                  className={`px-8 py-4 rounded-full font-bold tracking-widest text-xs uppercase transition-all duration-300 cursor-pointer ${
+                    isBlocked
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                      : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:scale-[1.02] active:scale-[0.98] text-white shadow-[0_12px_24px_rgba(16,185,129,0.2)] disabled:opacity-40 disabled:scale-100 disabled:pointer-events-none'
+                  }`}
                 >
-                  {status === 'running' || status === 'queued' ? 'Processing...' : quotaExhausted ? 'Limit Reached' : 'Run Research'}
+                  {status === 'running' || status === 'queued'
+                    ? 'Processing...'
+                    : isBlocked
+                    ? 'Top Up ৳10'
+                    : isFreeQuotaExhausted && hasPaidBalance
+                    ? `Run ${researchMode === 'fast' ? '⚡ Fast' : '🔬 Deep'} (৳10)`
+                    : `Run ${researchMode === 'fast' ? '⚡ Fast' : '🔬 Deep'} Research`}
                 </button>
               </div>
-              {quota && (
-                <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
-                  <span>Daily quota: {quota.used}/{quota.limit} used</span>
-                  <span className="text-white/15">|</span>
-                  <span className={quotaExhausted ? 'text-rose-300' : 'text-emerald-300'}>
-                    {quotaExhausted
-                      ? `Resets after ${quotaResetLabel(quota.resetAt)}`
-                      : `${quota.remaining} run${quota.remaining === 1 ? '' : 's'} remaining`}
+              <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
+                <span>
+                  Daily free quota: {quota ? `${quota.used}/${quota.limit} used` : '1/1 used'}
+                </span>
+                <span className="text-white/15">|</span>
+                {isFreeQuotaExhausted ? (
+                  hasPaidBalance ? (
+                    <span className="text-emerald-400 font-semibold">
+                      ৳{balanceBDT.toFixed(2)} BDT Balance Active (৳10/search)
+                    </span>
+                  ) : (
+                    <span className="text-amber-400">
+                      Wallet low (৳{balanceBDT.toFixed(2)}) — Top up ৳10 to continue
+                    </span>
+                  )
+                ) : (
+                  <span className="text-emerald-300">
+                    {quota?.remaining ?? 1} free run remaining
                   </span>
-                </div>
-              )}
+                )}
+              </div>
             </form>
           </div>
  
@@ -553,7 +620,7 @@ export default function ResearchPage() {
                   ))}
                 </div>
  
-                {/* TAB CONTENT (Super crisp white/slate text for perfect readability) */}
+                {/* TAB CONTENT */}
                 <div className="min-w-0 p-6 md:p-8 overflow-visible flex-1 text-slate-200 scrollbar-thin">
                   {status === 'running' && !result ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -566,8 +633,41 @@ export default function ResearchPage() {
                     <>
                       {/* REPORT */}
                       {activeTab === 'report' && result && (
-                        <div className="animate-fadeIn prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal break-words">
-                          <CustomMarkdown content={reportContent} />
+                        <div className="animate-fadeIn space-y-8">
+                          <div className="prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal break-words">
+                            <CustomMarkdown content={reportContent} />
+                          </div>
+
+                          {/* Referenced Sources Footnote Box */}
+                          {result.verified_urls && result.verified_urls.length > 0 && (
+                            <div className="mt-8 pt-6 border-t border-white/10">
+                              <h4 className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-2">
+                                <span>📚</span>
+                                <span>Referenced Literature & Citations ({result.verified_urls.length})</span>
+                              </h4>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {result.verified_urls.map((url, idx) => (
+                                  <a
+                                    key={url || idx}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-3 rounded-xl border border-white/5 hover:border-emerald-500/40 bg-white/[0.02] hover:bg-emerald-500/[0.04] transition-all flex items-center justify-between gap-2 group text-xs"
+                                  >
+                                    <div className="flex items-center gap-2 truncate">
+                                      <span className="font-mono font-bold text-emerald-400 shrink-0">
+                                        [{idx + 1}]
+                                      </span>
+                                      <span className="text-slate-300 group-hover:text-emerald-300 truncate font-medium">
+                                        {url.replace(/https?:\/\/(www\.)?/, '')}
+                                      </span>
+                                    </div>
+                                    <span className="text-slate-500 group-hover:text-emerald-400 shrink-0">↗</span>
+                                  </a>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
  
