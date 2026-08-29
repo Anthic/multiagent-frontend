@@ -145,10 +145,10 @@ export const Navbar = () => {
                     href={link.href}
                     onClick={() => setIsOpen(false)}
                     aria-current={active ? 'page' : undefined}
-                    className={`block text-[clamp(30px,9vw,90px)] font-light leading-none tracking-tighter transition-all duration-300 ${
+                    className={`group relative block w-fit overflow-hidden text-[clamp(27px,6.4vw,78px)] font-light leading-[0.92] tracking-tighter transition-all duration-300 after:absolute after:inset-x-0 after:bottom-0 after:h-px after:origin-left after:bg-black after:transition-transform after:duration-500 hover:after:scale-x-100 ${
                       active
-                        ? 'text-black [text-shadow:0_6px_28px_#67C090]'
-                        : 'text-black/80 hover:text-black hover:[text-shadow:0_4px_25px_#67C090]'
+                        ? 'text-black [text-shadow:0_6px_28px_#67C090] after:scale-x-100'
+                        : 'text-black/80 after:scale-x-0 hover:text-black hover:[text-shadow:0_4px_25px_#67C090]'
                     }`}
                     style={{
                       transform: isOpen ? 'translateY(0)' : 'translateY(100%)',
@@ -160,7 +160,8 @@ export const Navbar = () => {
                       }s, text-shadow 0.3s ease`,
                     }}
                   >
-                    {link.name}
+                    <span className="block transition-transform duration-500 ease-out group-hover:-translate-y-full">{link.name}</span>
+                    <span aria-hidden="true" className="absolute inset-x-0 top-0 block translate-y-full text-black transition-transform duration-500 ease-out group-hover:translate-y-0">{link.name}</span>
                   </TransitionLink>
                     );
                   })()}

@@ -7,20 +7,21 @@ import { showAppToast } from "@/src/components/ui/appToastEvents"
 import { api } from "@/src/lib/api"
 import { initalJobState, jobReducer } from "@/src/reducer/jobReducer"
 import { ResearchService } from "@/src/services/researchService"
-import { useAuthStore, useIsAuthenticated } from "@/src/store/authStore"
+import { noteService } from "@/src/services/noteService"
+import { useAuthStore, useIsAuthenticated, useUser } from "@/src/store/authStore"
 import { useWalletStore } from "@/src/store/walletStore"
 import { ApiError } from "@/src/types/api"
-import { ResearchQuota } from "@/src/types/research"
+import { Job, ResearchQuota } from "@/src/types/research"
 import { useJobStatus, useResearchHistory } from "@/src/hooks/useResearch"
 import { ActiveTab, DiagnosticsState, UIState } from "@/src/types/researchState"
-import { useQueryClient } from "@tanstack/react-query"
-import { useEffect, useMemo, useReducer, useState } from "react"
+import { useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { useSearchParams } from 'next/navigation';
 
 
 export default function ResearchPage() {
 
     const isAuthenticated = useIsAuthenticated()
+    const user = useUser()
     const searchParams = useSearchParams()
     const queryJobId = searchParams.get('jobId')
 
@@ -46,10 +47,12 @@ export default function ResearchPage() {
   // Active job ID drives TanStack Query polling — no manual setInterval needed
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
   const [quota, setQuota] = useState<ResearchQuota | null>(null);
-  const queryClient = useQueryClient();
+  const reportRef = useRef<HTMLDivElement>(null);
+  const [selection, setSelection] = useState<{ text: string; x: number; y: number } | null>(null);
+  const [isSavingNote, setIsSavingNote] = useState(false);
 
   // TanStack Query: history — cached, deduped, refetched on window focus
-  const { data: historyQueryData, refetch: refetchHistory } = useResearchHistory(10, isAuthenticated);
+  const { data: historyQueryData, refetch: refetchHistory, isLoading: isHistoryLoading } = useResearchHistory(user?.userId, 100, isAuthenticated);
   const history = historyQueryData?.data?.records ?? [];
   const historyCount = historyQueryData?.data?.count ?? 0;
 
@@ -197,69 +200,68 @@ export default function ResearchPage() {
     }
   };
 
-  // ── Load History Job ──────────────────────────────────────────────────────
-  // NOTE: We use getJobStatus (GET /job/{jobId}) instead of getHistoryById
-  // because the Python /history/{id} endpoint expects a numeric DB id,
-  // but we only have the job_id (uuid string). The /job/{jobId} endpoint
-  // is already working correctly and returns the full job with result.
-  const handleLoadHistoryJob = async (jobId: string) => {
-    dispatch({ type: 'RESET' });
- 
-    try {
-      const res = await ResearchService.getJobStatus(jobId);
-      if (res.success && res.data) {
-        // Treat the job result as a loaded history session
-        const job = res.data;
-        if (job.result) {
-          dispatch({ type: 'DONE', result: job.result });
-        } else {
-          dispatch({ type: 'LOAD_HISTORY', job });
-        }
-        setTab('report');
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Could not load historical research session';
+  const handleReportSelection = () => {
+    const browserSelection = window.getSelection();
+    const text = browserSelection?.toString().trim() ?? '';
+    const range = browserSelection?.rangeCount ? browserSelection.getRangeAt(0) : null;
 
-      dispatch({ type: 'FAILED', error: message });
+    if (!text || !range || !reportRef.current?.contains(range.commonAncestorContainer)) {
+      setSelection(null);
+      return;
+    }
+
+    const rect = range.getBoundingClientRect();
+    setSelection({
+      text,
+      x: Math.min(Math.max(rect.left + rect.width / 2, 88), window.innerWidth - 88),
+      y: Math.max(rect.top - 12, 54),
+    });
+  };
+
+  const saveSelectedNote = async () => {
+    if (!selection || isSavingNote) return;
+
+    setIsSavingNote(true);
+    try {
+      await noteService.createNote({
+        title: `Research excerpt — ${result?.topic || 'Untitled research'}`,
+        content: selection.text,
+        tags: ['research', 'saved-excerpt'],
+      });
+      window.getSelection()?.removeAllRanges();
+      setSelection(null);
+      showAppToast({ type: 'success', title: 'Note saved', message: 'The selected research excerpt is now in your Notes vault.' });
+    } catch {
+      showAppToast({ type: 'error', title: 'Could not save note', message: 'Please try again in a moment.' });
+    } finally {
+      setIsSavingNote(false);
     }
   };
 
-  useEffect(() => {
-    if (isAuthenticated && queryJobId) {
-      let isMounted = true;
-
-      void (async () => {
-        dispatch({ type: 'RESET' });
-
-        try {
-          const res = await ResearchService.getJobStatus(queryJobId);
-          if (!isMounted) return;
-
-          if (res.success && res.data) {
-            const job = res.data;
-
-            if (job.result) {
-              dispatch({ type: 'DONE', result: job.result });
-            } else {
-              dispatch({ type: 'LOAD_HISTORY', job });
-            }
-
-            setTab('report');
-          }
-        } catch (err: unknown) {
-          if (!isMounted) return;
-
-          const message = err instanceof Error ? err.message : 'Could not load historical research session';
-
-          dispatch({ type: 'FAILED', error: message });
-        }
-      })();
-
-      return () => {
-        isMounted = false;
-      };
+  // ── Load History Job ──────────────────────────────────────────────────────
+  // Completed history records already include their result. Do not refetch an
+  // arbitrary job ID when opening one: the current account's history is the
+  // source of truth for what the user may view.
+  const handleLoadHistoryJob = (job: Job) => {
+    dispatch({ type: 'RESET' });
+    if (job.result) {
+      dispatch({ type: 'DONE', result: job.result });
+    } else {
+      dispatch({ type: 'LOAD_HISTORY', job });
     }
-  }, [isAuthenticated, queryJobId]);
+    setTab('report');
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated || !queryJobId || isHistoryLoading) return;
+
+    const historyJob = history.find((job) => job.job_id === queryJobId);
+    if (historyJob) {
+      handleLoadHistoryJob(historyJob);
+    } else {
+      dispatch({ type: 'FAILED', error: 'This research session is unavailable in your account history.' });
+    }
+  }, [isAuthenticated, isHistoryLoading, queryJobId, history]);
  
   // ── Destructure for cleaner JSX ───────────────────────────────────────────
   const { status, progress, stage, error, result, rewrittenQueries, plan } = jobState;
@@ -348,6 +350,18 @@ export default function ResearchPage() {
       }}
     >
       <Navbar />
+
+      {selection && (
+        <button
+          type="button"
+          onClick={saveSelectedNote}
+          disabled={isSavingNote}
+          className="fixed z-[1100] -translate-x-1/2 -translate-y-full rounded-full border border-emerald-300/35 bg-slate-950/95 px-4 py-2 text-xs font-semibold text-emerald-200 shadow-[0_10px_30px_rgba(0,0,0,0.35)] backdrop-blur-xl transition hover:scale-105 hover:bg-emerald-500 hover:text-slate-950 disabled:opacity-70"
+          style={{ left: selection.x, top: selection.y }}
+        >
+          {isSavingNote ? 'Saving…' : 'Save note'}
+        </button>
+      )}
  
       {/* CSS Grid Overlay */}
       <div className="fixed inset-0 pointer-events-none z-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
@@ -405,7 +419,7 @@ export default function ResearchPage() {
                 history.map((h, idx) => (
                   <button
                     key={h.job_id}
-                    onClick={() => handleLoadHistoryJob(h.job_id)}
+                    onClick={() => handleLoadHistoryJob(h)}
                     className="w-full text-left p-3.5 rounded-2xl border border-white/5 hover:border-emerald-500/40 bg-white/[0.02] hover:bg-emerald-500/[0.04] transition-all duration-200 group cursor-pointer"
                   >
                     <div className="flex items-start gap-2.5">
@@ -527,7 +541,7 @@ export default function ResearchPage() {
               </div>
               <div className="flex flex-wrap items-center gap-2 font-mono text-[10px] uppercase tracking-widest text-slate-400">
                 <span>
-                  Daily free quota: {quota ? `${quota.used}/${quota.limit} used` : '1/1 used'}
+                  Free research quota: {quota ? `${quota.used}/${quota.limit} used` : 'Loading…'}
                 </span>
                 <span className="text-white/15">|</span>
                 {isFreeQuotaExhausted ? (
@@ -634,7 +648,7 @@ export default function ResearchPage() {
                       {/* REPORT */}
                       {activeTab === 'report' && result && (
                         <div className="animate-fadeIn space-y-8">
-                          <div className="prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal break-words">
+                          <div ref={reportRef} onMouseUp={handleReportSelection} className="prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal break-words">
                             <CustomMarkdown content={reportContent} />
                           </div>
 
@@ -656,7 +670,7 @@ export default function ResearchPage() {
                                   >
                                     <div className="flex items-center gap-2 truncate">
                                       <span className="font-mono font-bold text-emerald-400 shrink-0">
-                                        [{idx + 1}]
+                                        Source {idx + 1}
                                       </span>
                                       <span className="text-slate-300 group-hover:text-emerald-300 truncate font-medium">
                                         {url.replace(/https?:\/\/(www\.)?/, '')}
@@ -704,7 +718,7 @@ export default function ResearchPage() {
                                   className="p-4 rounded-xl border border-white/5 hover:border-emerald-500/50 bg-white/[0.02] hover:bg-emerald-500/[0.03] transition-all duration-300 flex items-start justify-between gap-3 group"
                                 >
                                   <div className="flex flex-col gap-1 overflow-hidden">
-                                    <span className="font-mono text-[9px] uppercase tracking-wider text-emerald-400 font-extrabold">SOURCE [{idx + 1}]</span>
+                                    <span className="font-mono text-[9px] uppercase tracking-wider text-emerald-400 font-extrabold">Source {idx + 1}</span>
                                     <span className="font-roboto text-sm text-slate-200 font-medium truncate group-hover:text-white">
                                       {url.replace(/https?:\/\/(www\.)?/, '')}
                                     </span>

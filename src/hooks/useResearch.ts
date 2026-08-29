@@ -7,7 +7,7 @@ import { useWalletStore } from "../store/walletStore"
 export const researchQueryKeys  = {
  all: ['research'] as const,
   job: (jobId: string) => ['research', 'job', jobId] as const,
-  history: (limit: number) => ['research', 'history', limit] as const,
+  history: (userId: string | undefined, limit: number) => ['research', 'history', userId ?? 'anonymous', limit] as const,
   historyById: (id: string) => ['research', 'history', id] as const,
   activeJob: ['research', 'activeJob'] as const,
 }
@@ -53,11 +53,14 @@ export const useJobStatus = (jobId : string |  null) => {
 }
 
 
-export const useResearchHistory = (limit = 10, enabled = true) => {
+export const useResearchHistory = (userId?: string, limit = 10, enabled = true) => {
     return useQuery ( {
-        queryKey : researchQueryKeys.history(limit),
+        // A history response is private to an account. Including the user ID prevents
+        // React Query from showing a previous account's cached sessions after sign-out.
+        queryKey : researchQueryKeys.history(userId, limit),
         queryFn : () => ResearchService.getHistory(limit),
-        enabled
+        enabled: enabled && !!userId,
+        staleTime: 0,
     })
 }
 

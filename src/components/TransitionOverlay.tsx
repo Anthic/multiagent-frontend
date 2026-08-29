@@ -17,41 +17,17 @@ export const TransitionOverlay = () => {
     if (typeof window === 'undefined') return;
 
     const ctx = gsap.context(() => {
-      gsap.ticker.lagSmoothing(500, 33);
-
       const paths = [path1Ref.current, path2Ref.current].filter(Boolean) as SVGPathElement[];
-      
-      // 1. Initial State: Screen is COVERED by the strokes
+      // Keep the overlay idle and hidden. Starting a second "initial reveal"
+      // timeline here could race with the first navigation and cause visible jank.
       paths.forEach((path) => {
         const length = path.getTotalLength() || 10000;
         gsap.set(path, {
           strokeDasharray: length,
-          strokeDashoffset: 0, // 0 means fully drawn (covering screen)
-          attr: { 'stroke-width': 680 }, // thick strokes to cover
+          strokeDashoffset: length,
+          attr: { 'stroke-width': 680 },
+          force3D: true,
         });
-      });
-
-      // 2. Initial Load Animation: Reveal the page
-      const tl = gsap.timeline({
-        delay: 0.05,
-        defaults: {
-          duration: 0.95,
-          ease: 'power3.inOut',
-          overwrite: 'auto',
-        },
-      });
-      paths.forEach((path, index) => {
-        const length = path.getTotalLength() || 10000;
-        tl.to(path, {
-          strokeDashoffset: -length, // wipe out
-          onComplete: () => {
-            // Reset to hidden state for future transitions
-            gsap.set(path, {
-              strokeDashoffset: length,
-              attr: { 'stroke-width': 680 },
-            });
-          }
-        }, index * 0.035);
       });
 
     }, containerRef);

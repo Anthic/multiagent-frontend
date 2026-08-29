@@ -45,8 +45,8 @@ export const TransitionProvider = ({ children }: { children: React.ReactNode }) 
 
       const tl = gsap.timeline({
         defaults: {
-          duration: 0.9,
-          ease: 'power3.inOut',
+          duration: 0.62,
+          ease: 'power4.inOut',
           overwrite: 'auto',
         },
         onComplete: resolve,
@@ -58,12 +58,10 @@ export const TransitionProvider = ({ children }: { children: React.ReactNode }) 
           strokeDasharray: totalLength,
           strokeDashoffset: totalLength,
           attr: { 'stroke-width': 680 },
+          force3D: true,
         });
-
-        tl.to(path, {
-          strokeDashoffset: 0,
-        }, index * 0.035);
       });
+      tl.to(pathsRef.current, { strokeDashoffset: 0, stagger: 0.025 });
     });
   }, []);
 
@@ -78,8 +76,8 @@ export const TransitionProvider = ({ children }: { children: React.ReactNode }) 
 
       const tl = gsap.timeline({
         defaults: {
-          duration: 0.95,
-          ease: 'power3.inOut',
+          duration: 0.66,
+          ease: 'power4.inOut',
           overwrite: 'auto',
         },
         onComplete: resolve,
@@ -87,15 +85,19 @@ export const TransitionProvider = ({ children }: { children: React.ReactNode }) 
 
       pathsRef.current.forEach((path, index) => {
         const totalLength = pathLengthsRef.current[index] || path.getTotalLength() || 10000;
-        tl.to(path, {
-          strokeDashoffset: -totalLength,
-          onComplete: () => {
+        gsap.set(path, { strokeDasharray: totalLength, force3D: true });
+      });
+      tl.to(pathsRef.current, {
+        strokeDashoffset: (_, target: SVGPathElement) => -(target.getTotalLength() || 10000),
+        stagger: 0.025,
+        onComplete: () => {
+          pathsRef.current.forEach((path, index) => {
             gsap.set(path, {
-              strokeDashoffset: totalLength,
+              strokeDashoffset: pathLengthsRef.current[index] || path.getTotalLength() || 10000,
               attr: { 'stroke-width': 680 },
             });
-          }
-        }, index * 0.035);
+          });
+        },
       });
     });
   }, []);

@@ -22,7 +22,7 @@ export default function DashboardPage() {
   const isAuthenticated = useIsAuthenticated();
   
   // TanStack Query: cached across navigations, no duplicate requests on re-mount
-  const { data: historyData, isLoading: loading } = useResearchHistory(50, isAuthenticated);
+  const { data: historyData, isLoading: loading } = useResearchHistory(user?.userId, 50, isAuthenticated);
   const history: Job[] = historyData?.data?.records ?? [];
 
   const [searchQuery, setSearchQuery] = useState('');
