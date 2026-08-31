@@ -4,15 +4,16 @@ import React, { useMemo } from 'react';
 
 interface CustomMarkdownProps {
   content: string;
+  sources?: string[];
 }
 
 // ── Inline parser: bold, italic, bold+italic, inline-code, links ──────────────
 // Order matters: bold+italic must be checked before bold and italic individually.
-function parseInline(text: string): React.ReactNode[] {
+function parseInline(text: string, sources: string[] = []): React.ReactNode[] {
   const parts: React.ReactNode[] = [];
   // Matches: ***bold+italic***, **bold**, *italic*, _italic_, `code`, [text](url)
   const regex =
-    /(\*\*\*[\s\S]+?\*\*\*|\*\*[\s\S]+?\*\*|\*[\s\S]+?\*|_[\s\S]+?_|`[^`]+`|\[([^\]]*)\]\(([^)]*)\))/g;
+    /(\*\*\*[\s\S]+?\*\*\*|\*\*[\s\S]+?\*\*|\*[\s\S]+?\*|_[\s\S]+?_|`[^`]+`|\[([^\]]*)\]\(([^)]*)\)|https?:\/\/[^\s<>)\]}]+)/g;
   let cursor = 0;
   let match: RegExpExecArray | null;
 
@@ -62,15 +63,19 @@ function parseInline(text: string): React.ReactNode[] {
       // Link [text](url)
       const linkText = match[2];
       const linkUrl = match[3];
+      const sourceIndex = sources.findIndex((source) => source.replace(/\/$/, '') === linkUrl.replace(/\/$/, ''));
+      const displayText = /^https?:\/\//i.test(linkText)
+        ? (sourceIndex >= 0 ? `Source ${sourceIndex + 1}` : 'Source')
+        : linkText;
       parts.push(
         <a
           key={match.index}
           href={linkUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-emerald-400 hover:text-emerald-300 underline underline-offset-4 transition-colors font-medium break-all"
+          className="text-emerald-400 hover:text-emerald-300 underline underline-offset-4 transition-colors font-medium"
         >
-          {linkText}
+          {displayText}
           <svg
             className="ml-0.5 inline-block size-3 align-baseline"
             fill="none"
@@ -84,6 +89,14 @@ function parseInline(text: string): React.ReactNode[] {
               d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
             />
           </svg>
+        </a>,
+      );
+    } else if (/^https?:\/\//i.test(raw)) {
+      const url = raw.replace(/[.,;:!?]+$/, '');
+      const sourceIndex = sources.findIndex((source) => source.replace(/\/$/, '') === url.replace(/\/$/, ''));
+      parts.push(
+        <a key={match.index} href={url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center rounded-md border border-emerald-400/25 bg-emerald-400/10 px-1.5 py-0.5 text-sm font-semibold text-emerald-300 no-underline transition hover:bg-emerald-400/20 hover:text-emerald-200">
+          {sourceIndex >= 0 ? `Source ${sourceIndex + 1}` : 'Source'} <span aria-hidden="true" className="ml-1 text-xs">↗</span>
         </a>,
       );
     }
@@ -100,7 +113,7 @@ function parseInline(text: string): React.ReactNode[] {
 }
 
 // ── Table parser ──────────────────────────────────────────────────────────────
-function parseTable(rows: string[], keyPrefix: string): React.ReactNode {
+function parseTable(rows: string[], keyPrefix: string, sources: string[]): React.ReactNode {
   // rows[0] = header, rows[1] = separator (---|---), rows[2+] = data rows
   const headerCells = rows[0]
     .split('|')
@@ -118,7 +131,7 @@ function parseTable(rows: string[], keyPrefix: string): React.ReactNode {
                 key={ci}
                 className="px-4 py-3 font-bold text-white/90 text-xs uppercase tracking-wider whitespace-nowrap"
               >
-                {parseInline(cell)}
+                {parseInline(cell, sources)}
               </th>
             ))}
           </tr>
@@ -136,7 +149,7 @@ function parseTable(rows: string[], keyPrefix: string): React.ReactNode {
               >
                 {cells.map((cell, ci) => (
                   <td key={ci} className="px-4 py-3 text-slate-300 break-words">
-                    {parseInline(cell)}
+                    {parseInline(cell, sources)}
                   </td>
                 ))}
               </tr>
@@ -149,7 +162,7 @@ function parseTable(rows: string[], keyPrefix: string): React.ReactNode {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
+export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content, sources = [] }) => {
   const elements = useMemo(() => {
     if (!content) return [];
 
@@ -250,7 +263,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
           i++;
         }
         if (tableRows.length >= 2) {
-          result.push(parseTable(tableRows, `table-${i}`));
+          result.push(parseTable(tableRows, `table-${i}`, sources));
         }
         continue;
       }
@@ -268,7 +281,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
         const text = (h6Match || h5Match)![1];
         result.push(
           <h6 key={`h56-${i}`} className="text-sm font-bold text-slate-300 mt-4 mb-1 uppercase tracking-widest font-mono">
-            {parseInline(text)}
+            {parseInline(text, sources)}
           </h6>,
         );
         i++; continue;
@@ -277,7 +290,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
         flushOrderedList(); flushUnorderedList();
         result.push(
           <h4 key={`h4-${i}`} className="text-base sm:text-lg font-bold text-white mt-5 mb-1.5 font-roboto">
-            {parseInline(h4Match[1])}
+            {parseInline(h4Match[1], sources)}
           </h4>,
         );
         i++; continue;
@@ -286,7 +299,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
         flushOrderedList(); flushUnorderedList();
         result.push(
           <h3 key={`h3-${i}`} className="text-lg sm:text-xl font-bold text-white mt-6 mb-2 border-l-2 border-emerald-500 pl-3">
-            {parseInline(h3Match[1])}
+            {parseInline(h3Match[1], sources)}
           </h3>,
         );
         i++; continue;
@@ -295,7 +308,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
         flushOrderedList(); flushUnorderedList();
         result.push(
           <h2 key={`h2-${i}`} className="text-xl sm:text-2xl font-audiowide text-white mt-8 mb-3 tracking-normal pb-2 border-b border-white/10">
-            {parseInline(h2Match[1])}
+            {parseInline(h2Match[1], sources)}
           </h2>,
         );
         i++; continue;
@@ -304,7 +317,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
         flushOrderedList(); flushUnorderedList();
         result.push(
           <h1 key={`h1-${i}`} className="text-2xl sm:text-3xl font-metamorphous text-white mt-8 mb-4 tracking-tight pb-2 border-b border-white/15">
-            {parseInline(h1Match[1])}
+            {parseInline(h1Match[1], sources)}
           </h1>,
         );
         i++; continue;
@@ -315,7 +328,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
         flushOrderedList(); flushUnorderedList();
         result.push(
           <blockquote key={`bq-${i}`} className="border-l-4 border-emerald-500 pl-4 py-2 my-4 bg-emerald-500/5 text-slate-300 italic rounded-r-lg font-roboto">
-            {parseInline(trimmed.replace(/^>\s*/, ''))}
+            {parseInline(trimmed.replace(/^>\s*/, ''), sources)}
           </blockquote>,
         );
         i++; continue;
@@ -328,7 +341,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
         unorderedListItems.push(
           <li key={`uli-${i}`} className="flex items-start gap-2.5">
             <span className="size-1.5 rounded-full bg-emerald-500 mt-[0.45rem] shrink-0" />
-            <span className="min-w-0 leading-relaxed break-words">{parseInline(itemText)}</span>
+            <span className="min-w-0 leading-relaxed break-words">{parseInline(itemText, sources)}</span>
           </li>,
         );
         i++; continue;
@@ -345,7 +358,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
             <span className="min-w-[1.5rem] h-6 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-500/20 mt-0.5">
               {num}
             </span>
-            <span className="min-w-0 leading-relaxed break-words">{parseInline(itemText)}</span>
+            <span className="min-w-0 leading-relaxed break-words">{parseInline(itemText, sources)}</span>
           </li>,
         );
         i++; continue;
@@ -356,7 +369,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
       flushUnorderedList();
       result.push(
         <p key={`p-${i}`} className="my-3 leading-relaxed font-roboto text-slate-300 text-base break-words">
-          {parseInline(line)}
+          {parseInline(line, sources)}
         </p>,
       );
       i++;
@@ -367,7 +380,7 @@ export const CustomMarkdown: React.FC<CustomMarkdownProps> = ({ content }) => {
     flushUnorderedList();
 
     return result;
-  }, [content]);
+  }, [content, sources]);
 
   if (!content) return null;
 

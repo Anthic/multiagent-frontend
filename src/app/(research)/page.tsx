@@ -7,6 +7,7 @@ import { showAppToast } from "@/src/components/ui/appToastEvents"
 import { api } from "@/src/lib/api"
 import { initalJobState, jobReducer } from "@/src/reducer/jobReducer"
 import { ResearchService } from "@/src/services/researchService"
+import { walletService } from "@/src/services/walletService"
 import { noteService } from "@/src/services/noteService"
 import { useAuthStore, useIsAuthenticated, useUser } from "@/src/store/authStore"
 import { useWalletStore } from "@/src/store/walletStore"
@@ -53,7 +54,14 @@ export default function ResearchPage() {
 
   // TanStack Query: history — cached, deduped, refetched on window focus
   const { data: historyQueryData, refetch: refetchHistory, isLoading: isHistoryLoading } = useResearchHistory(user?.userId, 100, isAuthenticated);
-  const history = historyQueryData?.data?.records ?? [];
+  // Preserve a ChatGPT-style, most-recent-first session list even if the API
+  // response order changes. The query key is account-scoped, preventing cache bleed.
+  const history = useMemo(
+    () => [...(historyQueryData?.data?.records ?? [])].sort(
+      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+    ),
+    [historyQueryData],
+  );
   const historyCount = historyQueryData?.data?.count ?? 0;
 
   // TanStack Query: job polling — refetchInterval stops on done/failed automatically
@@ -166,6 +174,26 @@ export default function ResearchPage() {
   const handleStartResearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!uiState.topic.trim()) return;
+
+    // Revalidate immediately before a research request so stale browser state
+    // can never start a paid search without sufficient credit.
+    try {
+      const [quotaResponse, wallet] = await Promise.all([
+        ResearchService.getQuota(),
+        walletService.getBalance(),
+      ]);
+      const currentQuota = quotaResponse.success ? quotaResponse.data : null;
+      if (currentQuota) setQuota(currentQuota);
+      useWalletStore.getState().setWalletData(wallet);
+
+      if (currentQuota?.remaining === 0 && wallet.balanceBDT < 10) {
+        openTopUpModal(10, 'Your free research has been used and your wallet needs at least ৳10 to continue.');
+        return;
+      }
+    } catch {
+      showAppToast({ type: 'error', title: 'Could not verify research access', message: 'Please refresh and try again.' });
+      return;
+    }
 
     if (isBlocked) {
       openTopUpModal(10, 'Daily free research limit reached. Please top up ৳10 BDT to continue research.');
@@ -283,7 +311,7 @@ export default function ResearchPage() {
       const num = idx + 1;
       // Match [Source 1], [Source: 1], [1], [^1] not already wrapped in markdown link
       text = text.replace(new RegExp(`\\[Source\\s*:?\\s*${num}\\](?!\\()`, 'gi'), `[Source ${num}](${url})`);
-      text = text.replace(new RegExp(`\\[\\^?${num}\\](?!\\()`, 'g'), `[[${num}]](${url})`);
+      text = text.replace(new RegExp(`\\[\\^?${num}\\](?!\\()`, 'g'), `[Source ${num}](${url})`);
     });
     return text;
   }, [result]);
@@ -296,7 +324,7 @@ export default function ResearchPage() {
       if (!url) return;
       const num = idx + 1;
       text = text.replace(new RegExp(`\\[Source\\s*:?\\s*${num}\\](?!\\()`, 'gi'), `[Source ${num}](${url})`);
-      text = text.replace(new RegExp(`\\[\\^?${num}\\](?!\\()`, 'g'), `[[${num}]](${url})`);
+      text = text.replace(new RegExp(`\\[\\^?${num}\\](?!\\()`, 'g'), `[Source ${num}](${url})`);
     });
     return text;
   }, [result]);
@@ -523,7 +551,7 @@ export default function ResearchPage() {
                 </div>
                 <button
                   type="submit"
-                  disabled={status === 'running' || status === 'queued' || !topic.trim() || isBlocked}
+                  disabled={status === 'running' || status === 'queued' || !topic.trim()}
                   className={`px-8 py-4 rounded-full font-bold tracking-widest text-xs uppercase transition-all duration-300 cursor-pointer ${
                     isBlocked
                       ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
@@ -649,7 +677,7 @@ export default function ResearchPage() {
                       {activeTab === 'report' && result && (
                         <div className="animate-fadeIn space-y-8">
                           <div ref={reportRef} onMouseUp={handleReportSelection} className="prose prose-invert max-w-none text-slate-100 leading-relaxed text-base font-normal break-words">
-                            <CustomMarkdown content={reportContent} />
+                            <CustomMarkdown content={reportContent} sources={result.verified_urls} />
                           </div>
 
                           {/* Referenced Sources Footnote Box */}
@@ -672,8 +700,8 @@ export default function ResearchPage() {
                                       <span className="font-mono font-bold text-emerald-400 shrink-0">
                                         Source {idx + 1}
                                       </span>
-                                      <span className="text-slate-300 group-hover:text-emerald-300 truncate font-medium">
-                                        {url.replace(/https?:\/\/(www\.)?/, '')}
+                                      <span className="text-slate-300 group-hover:text-emerald-300 font-medium">
+                                        Open original source
                                       </span>
                                     </div>
                                     <span className="text-slate-500 group-hover:text-emerald-400 shrink-0">↗</span>
@@ -692,7 +720,7 @@ export default function ResearchPage() {
                             <h3 className="font-audiowide text-base font-extrabold text-white uppercase tracking-wider mb-2">
                               System Review Feedback:
                             </h3>
-                            <CustomMarkdown content={critiqueContent} />
+                            <CustomMarkdown content={critiqueContent} sources={result.verified_urls} />
                           </div>
                           <div className="flex flex-col gap-4 shrink-0">
                             <ScoreMeter score={result.critique_score} type="critique" />
@@ -705,7 +733,7 @@ export default function ResearchPage() {
                       {activeTab === 'sources' && result && (
                         <div className="flex flex-col gap-4 animate-fadeIn">
                           <h3 className="font-audiowide text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mb-2">
-                            VERIFIED INDEX DOMAINS
+                            VERIFIED SOURCES
                           </h3>
                           {result.verified_urls && result.verified_urls.length > 0 ? (
                             <div className="grid md:grid-cols-2 gap-4">
@@ -719,8 +747,8 @@ export default function ResearchPage() {
                                 >
                                   <div className="flex flex-col gap-1 overflow-hidden">
                                     <span className="font-mono text-[9px] uppercase tracking-wider text-emerald-400 font-extrabold">Source {idx + 1}</span>
-                                    <span className="font-roboto text-sm text-slate-200 font-medium truncate group-hover:text-white">
-                                      {url.replace(/https?:\/\/(www\.)?/, '')}
+                                    <span className="font-roboto text-sm text-slate-200 font-medium group-hover:text-white">
+                                      Open original paper or source
                                     </span>
                                   </div>
                                   <span className="text-slate-500 shrink-0 group-hover:text-emerald-400 transition-colors pt-0.5">

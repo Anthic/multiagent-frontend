@@ -54,15 +54,19 @@ export const useJobStatus = (jobId : string |  null) => {
 
 
 export const useResearchHistory = (userId?: string, limit = 10, enabled = true) => {
-    return useQuery ( {
+    return useQuery({
         // A history response is private to an account. Including the user ID prevents
         // React Query from showing a previous account's cached sessions after sign-out.
-        queryKey : researchQueryKeys.history(userId, limit),
-        queryFn : () => ResearchService.getHistory(limit),
+        queryKey: researchQueryKeys.history(userId, limit),
+        queryFn: () => ResearchService.getHistory(limit),
         enabled: enabled && !!userId,
         staleTime: 0,
-    })
-}
+        refetchInterval: 3500, // Real-time polling every 3.5s
+        refetchOnWindowFocus: true,
+        refetchOnMount: 'always',
+    });
+};
+
 
 export const useResearchById = (id : string) => {
     return useQuery ( {

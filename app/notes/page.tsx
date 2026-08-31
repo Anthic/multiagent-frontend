@@ -1,187 +1,202 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { noteService, INote } from '@/src/services/noteService';
+import {
+  noteService,
+  INote,
+  ICreateNotePayload,
+  IUpdateNotePayload,
+} from '@/src/services/noteService';
 import { showAppToast } from '@/src/components/ui/appToastEvents';
+import { NoteCard } from '@/src/components/notes/NoteCard';
+import { NoteDetailModal } from '@/src/components/notes/NoteDetailModal';
+import { NoteEditorModal } from '@/src/components/notes/NoteEditorModal';
+import { DeleteConfirmModal } from '@/src/components/notes/DeleteConfirmModal';
+import { NoteSkeleton } from '@/src/components/notes/NoteSkeleton';
+import { NotesStatsBar } from '@/src/components/notes/NotesStatsBar';
 
-export default function NotesVaultPage() {
-  const router = useRouter();
+type SortOption = 'updated_desc' | 'created_desc' | 'title_asc' | 'title_desc';
+
+export default function NotesPage() {
+  // Data states
   const [notes, setNotes] = useState<INote[]>([]);
   const [tags, setTags] = useState<string[]>([]);
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Note creation / edit modal state
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [tagInput, setTagInput] = useState('');
-  const [sourceUrl, setSourceUrl] = useState('');
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  // Filters & Sorting & View mode
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('updated_desc');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Custom Delete Confirm Dialog state
+  // Modals state
+  const [isEditorOpen, setIsEditorOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<INote | null>(null);
+
+  const [detailNote, setDetailNote] = useState<INote | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
   const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Search input debouncing
   useEffect(() => {
-    loadNotes();
-    loadTags();
-  }, [selectedTag]);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  const loadNotes = async () => {
+  // Load notes and tags
+  const fetchNotes = useCallback(async (tag?: string | null, search?: string) => {
     try {
-      setIsLoading(true);
-      const data = await noteService.getAllNotes(selectedTag || undefined);
+      setIsSearching(true);
+      const data = await noteService.getAllNotes({
+        tag: tag || undefined,
+        search: search || undefined,
+      });
       setNotes(data);
     } catch {
       showAppToast({
         type: 'error',
-        title: 'Error',
-        message: 'Could not load notes from server.',
+        title: 'Error loading notes',
+        message: 'Could not fetch notes from server. Please check your connection.',
       });
     } finally {
       setIsLoading(false);
+      setIsSearching(false);
     }
-  };
+  }, []);
 
-  const loadTags = async () => {
+  const fetchTags = useCallback(async () => {
     try {
       const data = await noteService.getAllTags();
       setTags(data);
     } catch {
-      // Best effort
+      // Best effort tag retrieval
     }
-  };
+  }, []);
 
-  const handleOpenCreateModal = () => {
-    setEditingNoteId(null);
-    setTitle('');
-    setContent('');
-    setTagInput('');
-    setSourceUrl('');
-    setError(null);
-    setIsModalOpen(true);
-  };
+  useEffect(() => {
+    fetchNotes(selectedTag, debouncedSearch);
+  }, [selectedTag, debouncedSearch, fetchNotes]);
 
-  const handleOpenEditModal = (note: INote) => {
-    setEditingNoteId(note.id || note._id || null);
-    setTitle(note.title);
-    setContent(note.content);
-    setTagInput((note.tags || []).join(', '));
-    setSourceUrl(note.sourceUrl || '');
-    setError(null);
-    setIsModalOpen(true);
-  };
+  useEffect(() => {
+    fetchTags();
+  }, [fetchTags]);
 
-  const handleSaveNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!title.trim() || !content.trim()) {
-      setError('Title and Content are required.');
-      return;
-    }
-
-    try {
-      setIsSaving(true);
-      setError(null);
-      const parsedTags = tagInput
-        .split(',')
-        .map((t) => t.trim().replace(/^#/, ''))
-        .filter(Boolean);
-
-      if (editingNoteId) {
-        await noteService.updateNote(editingNoteId, {
-          title: title.trim(),
-          content: content.trim(),
-          tags: parsedTags,
-          sourceUrl: sourceUrl.trim() || undefined,
-        });
-        showAppToast({
-          type: 'success',
-          title: 'Note Updated',
-          message: `"${title.trim()}" has been updated successfully.`,
-        });
-      } else {
-        await noteService.createNote({
-          title: title.trim(),
-          content: content.trim(),
-          tags: parsedTags,
-          sourceUrl: sourceUrl.trim() || undefined,
-        });
-        showAppToast({
-          type: 'success',
-          title: 'Note Created',
-          message: `"${title.trim()}" saved & vectorized in Qdrant RAG.`,
-        });
+  // Sort notes
+  const sortedNotes = useMemo(() => {
+    const list = [...notes];
+    return list.sort((a, b) => {
+      if (sortBy === 'updated_desc') {
+        const dateA = new Date(a.updatedAt || a.createdAt || 0).getTime();
+        const dateB = new Date(b.updatedAt || b.createdAt || 0).getTime();
+        return dateB - dateA;
       }
+      if (sortBy === 'created_desc') {
+        const dateA = new Date(a.createdAt || a.updatedAt || 0).getTime();
+        const dateB = new Date(b.createdAt || b.updatedAt || 0).getTime();
+        return dateB - dateA;
+      }
+      if (sortBy === 'title_asc') {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortBy === 'title_desc') {
+        return b.title.localeCompare(a.title);
+      }
+      return 0;
+    });
+  }, [notes, sortBy]);
 
-      setIsModalOpen(false);
-      await loadNotes();
-      await loadTags();
-    } catch (err: any) {
-      setError(err?.message || 'Failed to save note.');
-      showAppToast({
-        type: 'error',
-        title: 'Save Failed',
-        message: err?.message || 'Could not save note.',
-      });
-    } finally {
-      setIsSaving(false);
-    }
+  // Note CRUD handlers
+  const handleOpenCreate = () => {
+    setEditingNote(null);
+    setIsEditorOpen(true);
   };
 
-  const confirmDeleteNote = async () => {
+  const handleOpenEdit = (note: INote) => {
+    setEditingNote(note);
+    setIsEditorOpen(true);
+  };
+
+  const handleOpenDetail = (note: INote) => {
+    setDetailNote(note);
+    setIsDetailOpen(true);
+  };
+
+  const handlePromptDelete = (noteId: string) => {
+    setDeletingNoteId(noteId);
+  };
+
+  const handleSaveNote = async (
+    payload: ICreateNotePayload | IUpdateNotePayload,
+    editingId?: string
+  ) => {
+    if (editingId) {
+      const updated = await noteService.updateNote(editingId, payload);
+      setNotes((prev) =>
+        prev.map((n) => ((n.id || n._id) === editingId ? { ...n, ...updated } : n))
+      );
+      if (detailNote && (detailNote.id || detailNote._id) === editingId) {
+        setDetailNote((prev) => (prev ? { ...prev, ...updated } : null));
+      }
+      showAppToast({
+        type: 'success',
+        title: 'Note updated',
+        message: `"${payload.title || 'Note'}" has been updated.`,
+      });
+    } else {
+      const created = await noteService.createNote(payload as ICreateNotePayload);
+      setNotes((prev) => [created, ...prev]);
+      showAppToast({
+        type: 'success',
+        title: 'Note created',
+        message: `"${created.title}" added to your vault.`,
+      });
+    }
+    await fetchTags();
+  };
+
+  const handleConfirmDelete = async () => {
     if (!deletingNoteId) return;
     try {
       setIsDeleting(true);
       await noteService.deleteNote(deletingNoteId);
       setNotes((prev) => prev.filter((n) => (n.id || n._id) !== deletingNoteId));
+      if (detailNote && (detailNote.id || detailNote._id) === deletingNoteId) {
+        setIsDetailOpen(false);
+        setDetailNote(null);
+      }
       showAppToast({
         type: 'info',
-        title: 'Note Deleted',
+        title: 'Note deleted',
         message: 'The note has been removed from your vault.',
       });
       setDeletingNoteId(null);
-      await loadTags();
+      await fetchTags();
     } catch {
       showAppToast({
         type: 'error',
-        title: 'Delete Failed',
-        message: 'Failed to delete note. Please try again.',
+        title: 'Delete failed',
+        message: 'Could not delete note. Please try again.',
       });
     } finally {
       setIsDeleting(false);
     }
   };
 
-  const handleCopyNote = (text: string) => {
-    navigator.clipboard.writeText(text);
-    showAppToast({
-      type: 'info',
-      title: 'Copied to Clipboard',
-      message: 'Note content copied successfully.',
-    });
-  };
-
-  // Client-side search filter
-  const filteredNotes = useMemo(() => {
-    if (!searchQuery.trim()) return notes;
-    const q = searchQuery.toLowerCase();
-    return notes.filter(
-      (n) =>
-        n.title.toLowerCase().includes(q) ||
-        n.content.toLowerCase().includes(q) ||
-        (n.tags || []).some((t) => t.toLowerCase().includes(q)),
-    );
-  }, [notes, searchQuery]);
+  const deletingNoteObject = useMemo(() => {
+    if (!deletingNoteId) return undefined;
+    return notes.find((n) => (n.id || n._id) === deletingNoteId);
+  }, [notes, deletingNoteId]);
 
   return (
-    <div className="min-h-screen bg-black text-zinc-100 pt-20 pb-20 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-      {/* ── Breadcrumb & Back Navigation ──────────────────────────────────────── */}
+    <div className="min-h-screen bg-black text-zinc-100 pt-24 sm:pt-28 pb-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+      {/* ── Breadcrumb & Navigation Bar ────────────────────────────────────────── */}
       <div className="mb-6 flex items-center justify-between border-b border-zinc-900 pb-4">
         <div className="flex items-center gap-2 text-xs text-zinc-400">
           <Link
@@ -192,316 +207,281 @@ export default function NotesVaultPage() {
             <span>Dashboard</span>
           </Link>
           <span>/</span>
-          <span className="text-zinc-200 font-medium">Notes Vault</span>
+          <span className="text-[#AAFFC7] font-medium">Notes Vault</span>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 text-xs">
           <Link
             href="/research"
-            className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+            className="text-zinc-400 hover:text-zinc-200 transition-colors hidden sm:inline"
           >
-            Go to Research →
+            AI Research →
+          </Link>
+          <Link
+            href="/papers"
+            className="text-zinc-400 hover:text-zinc-200 transition-colors"
+          >
+            Paper Studio →
           </Link>
         </div>
       </div>
 
-      {/* ── Top Header ────────────────────────────────────────────────────────── */}
+      {/* ── Top Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#AAFFC7]/15 text-[#AAFFC7] text-sm font-bold shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#AAFFC7]/15 text-[#AAFFC7] text-base font-bold shadow-sm shadow-[#AAFFC7]/20 border border-[#AAFFC7]/30">
               ✦
             </span>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
-              Smart Notes Vault
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+              Notes Vault
             </h1>
           </div>
-          <p className="mt-1.5 text-xs text-zinc-400">
-            Capture academic literature snippets, findings, and hypotheses. Synced directly with Qdrant Vector RAG.
+          <p className="mt-1.5 text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
+            Capture academic literature snippets, research ideas, audio memos, and hypotheses in your private workspace.
           </p>
         </div>
 
         <button
-          onClick={handleOpenCreateModal}
-          className="flex items-center justify-center gap-2 rounded-xl bg-[#AAFFC7] px-4 py-2.5 text-xs font-bold text-black hover:bg-[#94f5b4] active:scale-95 transition-all shadow-md shadow-[#AAFFC7]/15 cursor-pointer"
+          type="button"
+          onClick={handleOpenCreate}
+          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#AAFFC7] px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold text-black hover:bg-[#94f5b4] active:scale-95 transition-all shadow-lg shadow-[#AAFFC7]/20 cursor-pointer self-start sm:self-auto shrink-0"
         >
-          <span>+</span>
+          <span className="text-base leading-none">+</span>
           <span>New Note</span>
         </button>
       </div>
 
-      {/* ── Search & Tag Filter Bar ───────────────────────────────────────────── */}
-      <div className="mt-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
-        {/* Search Bar */}
-        <div className="relative flex-1 max-w-md">
-          <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">
-            🔍
-          </span>
-          <input
-            type="text"
-            placeholder="Search notes, tags, or topics..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-zinc-800 bg-zinc-950 py-2.5 pl-9 pr-4 text-xs text-zinc-200 placeholder-zinc-500 outline-none focus:border-[#AAFFC7]/70 focus:ring-1 focus:ring-[#AAFFC7]/40 transition-all"
-          />
+      {/* ── Stats Summary Bar ─────────────────────────────────────────────────── */}
+      <div className="mt-6">
+        <NotesStatsBar notes={notes} tags={tags} />
+      </div>
+
+      {/* ── Controls Bar: Search, Tags, Sorting, View Toggle ──────────────────── */}
+      <div className="mt-7 space-y-3.5 rounded-2xl border border-zinc-800/90 bg-zinc-950/70 p-4 sm:p-5 backdrop-blur-md">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative flex-1 max-w-lg">
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-500 text-xs">
+              🔍
+            </span>
+            <input
+              type="text"
+              placeholder="Search notes by title, content, or tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full rounded-xl border border-zinc-800 bg-zinc-900/70 py-2.5 pl-9 pr-9 text-xs text-zinc-200 placeholder-zinc-500 outline-none focus:border-[#AAFFC7] focus:ring-1 focus:ring-[#AAFFC7]/40 transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 text-xs p-1"
+                title="Clear search"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+
+          {/* Controls: Sort & View Toggle */}
+          <div className="flex items-center gap-2.5 shrink-0 justify-between md:justify-end">
+            {/* Sort Dropdown */}
+            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+              <span className="hidden sm:inline text-zinc-500">Sort:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortOption)}
+                className="rounded-xl border border-zinc-800 bg-zinc-900/80 px-3 py-2 text-xs text-zinc-200 outline-none focus:border-[#AAFFC7] cursor-pointer"
+              >
+                <option value="updated_desc">Recently Updated</option>
+                <option value="created_desc">Recently Created</option>
+                <option value="title_asc">Title A–Z</option>
+                <option value="title_desc">Title Z–A</option>
+              </select>
+            </div>
+
+            {/* View Mode Switcher */}
+            <div className="flex items-center rounded-xl border border-zinc-800 bg-zinc-900/80 p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode('grid')}
+                className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
+                  viewMode === 'grid'
+                    ? 'bg-zinc-800 text-[#AAFFC7]'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+                title="Grid view"
+                aria-label="Grid view"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`rounded-lg p-1.5 transition-colors cursor-pointer ${
+                  viewMode === 'list'
+                    ? 'bg-zinc-800 text-[#AAFFC7]'
+                    : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+                title="List view"
+                aria-label="List view"
+              >
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </div>
         </div>
 
-        {/* Tag Filters */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+        {/* Tag Filters Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full no-scrollbar">
           <button
+            type="button"
             onClick={() => setSelectedTag(null)}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all shrink-0 cursor-pointer ${
+            className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all shrink-0 cursor-pointer ${
               selectedTag === null
-                ? 'bg-[#AAFFC7]/20 text-[#AAFFC7] border border-[#AAFFC7]/40 font-semibold'
-                : 'bg-zinc-900/60 text-zinc-400 border border-zinc-800 hover:text-zinc-200'
+                ? 'bg-[#AAFFC7]/20 text-[#AAFFC7] border border-[#AAFFC7]/40 font-semibold shadow-sm'
+                : 'bg-zinc-900/60 text-zinc-400 border border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800/50'
             }`}
           >
-            All ({notes.length})
+            All Notes ({notes.length})
           </button>
-          {tags.map((tag) => (
-            <button
-              key={tag}
-              onClick={() => setSelectedTag(tag === selectedTag ? null : tag)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-all shrink-0 cursor-pointer ${
-                selectedTag === tag
-                  ? 'bg-[#AAFFC7]/20 text-[#AAFFC7] border border-[#AAFFC7]/40 font-semibold'
-                  : 'bg-zinc-900/60 text-zinc-400 border border-zinc-800 hover:text-zinc-200'
-              }`}
-            >
-              #{tag}
-            </button>
-          ))}
+          {tags.map((tag) => {
+            const isSelected = selectedTag === tag;
+            return (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => setSelectedTag(isSelected ? null : tag)}
+                className={`rounded-xl px-3 py-1.5 text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#AAFFC7]/20 text-[#AAFFC7] border border-[#AAFFC7]/40 font-semibold shadow-sm'
+                    : 'bg-zinc-900/60 text-zinc-400 border border-zinc-800 hover:text-zinc-200 hover:bg-zinc-800/50'
+                }`}
+              >
+                #{tag}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* ── Notes Grid ────────────────────────────────────────────────────────── */}
+      {/* ── Notes Display Area ─────────────────────────────────────────────────── */}
       <div className="mt-7">
-        {isLoading ? (
-          <div className="py-20 text-center text-xs text-zinc-500">
-            Loading your notes vault...
-          </div>
-        ) : filteredNotes.length === 0 ? (
-          <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/40 p-12 text-center">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400 text-xl">
-              📝
+        {isLoading || isSearching ? (
+          <NoteSkeleton count={6} viewMode={viewMode} />
+        ) : sortedNotes.length === 0 ? (
+          /* Empty States */
+          <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/50 p-12 sm:p-16 text-center backdrop-blur-md">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-zinc-900 text-zinc-400 text-2xl border border-zinc-800 shadow-inner">
+              {searchQuery ? '🔍' : selectedTag ? '🏷️' : '📝'}
             </div>
-            <h3 className="mt-4 text-sm font-semibold text-zinc-200">No notes found</h3>
-            <p className="mt-1 text-xs text-zinc-500 max-w-sm mx-auto">
+
+            <h3 className="mt-4 text-base font-semibold text-zinc-200">
               {searchQuery
-                ? 'No notes match your search query. Try a different keyword.'
-                : 'Start capturing research insights or citations to power your papers.'}
+                ? 'No matching notes found'
+                : selectedTag
+                ? `No notes with tag #${selectedTag}`
+                : 'No notes in your vault yet'}
+            </h3>
+
+            <p className="mt-1.5 text-xs sm:text-sm text-zinc-500 max-w-md mx-auto leading-relaxed">
+              {searchQuery
+                ? `No notes matched "${searchQuery}". Try a different keyword or reset filters.`
+                : selectedTag
+                ? `You have not tagged any notes with #${selectedTag} yet.`
+                : 'Capture your first research idea, literature insight, or voice memo to power your papers.'}
             </p>
-            <button
-              onClick={handleOpenCreateModal}
-              className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-zinc-900 border border-zinc-800 px-4 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer"
-            >
-              + Create your first note
-            </button>
+
+            <div className="mt-6 flex items-center justify-center gap-3">
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery('')}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer"
+                >
+                  Clear Search
+                </button>
+              ) : selectedTag ? (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTag(null)}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer"
+                >
+                  Reset Tag Filter
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleOpenCreate}
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#AAFFC7] px-5 py-2.5 text-xs font-bold text-black hover:bg-[#94f5b4] active:scale-95 transition-all shadow-md shadow-[#AAFFC7]/20 cursor-pointer"
+                >
+                  <span>+</span>
+                  <span>Create your first note</span>
+                </button>
+              )}
+            </div>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-            {filteredNotes.map((note) => {
-              const noteId = note.id || note._id || '';
-              return (
-                <div
-                  key={noteId}
-                  className="group relative flex flex-col justify-between rounded-2xl border border-zinc-800/90 bg-zinc-950/80 p-5 hover:border-zinc-700 transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 backdrop-blur-md"
-                >
-                  <div>
-                    {/* Header */}
-                    <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-sm font-bold text-zinc-100 line-clamp-2">
-                        {note.title}
-                      </h3>
-                      <div className="flex items-center gap-1 shrink-0 opacity-80 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => handleCopyNote(`${note.title}\n\n${note.content}`)}
-                          className="rounded p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
-                          title="Copy content"
-                        >
-                          📋
-                        </button>
-                        <button
-                          onClick={() => handleOpenEditModal(note)}
-                          className="rounded p-1.5 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
-                          title="Edit note"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => setDeletingNoteId(noteId)}
-                          className="rounded p-1.5 text-zinc-400 hover:bg-rose-950 hover:text-rose-400 transition-colors"
-                          title="Delete note"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Content Preview */}
-                    <p className="mt-2.5 text-xs text-zinc-400 leading-relaxed line-clamp-4 whitespace-pre-wrap">
-                      {note.content}
-                    </p>
-                  </div>
-
-                  {/* Footer (Tags & Vector status) */}
-                  <div className="mt-4 pt-3 border-t border-zinc-900 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap gap-1">
-                      {(note.tags || []).map((t) => (
-                        <span
-                          key={t}
-                          className="rounded bg-zinc-900 border border-zinc-800/80 px-2 py-0.5 text-[10px] font-medium text-zinc-400"
-                        >
-                          #{t}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-400">
-                      <span className="size-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-                      <span>RAG Synced</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+          /* Notes Grid / List */
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5'
+                : 'flex flex-col gap-3'
+            }
+          >
+            {sortedNotes.map((note) => (
+              <NoteCard
+                key={note.id || note._id || note.title}
+                note={note}
+                viewMode={viewMode}
+                onView={handleOpenDetail}
+                onEdit={handleOpenEdit}
+                onDelete={handlePromptDelete}
+                onTagClick={(t) => setSelectedTag(t)}
+              />
+            ))}
           </div>
         )}
       </div>
 
-      {/* ── Custom Delete Confirmation Dialog ─────────────────────────────────── */}
-      {deletingNoteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
-            onClick={() => !isDeleting && setDeletingNoteId(null)}
-          />
-          <div className="relative z-10 w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/15 text-rose-400 text-lg mb-3">
-              🗑️
-            </div>
-            <h3 className="text-sm font-bold text-white">Delete this research note?</h3>
-            <p className="mt-1 text-xs text-zinc-400">
-              This action cannot be undone. The note and its vector embedding will be permanently removed.
-            </p>
-            <div className="mt-5 flex items-center justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setDeletingNoteId(null)}
-                disabled={isDeleting}
-                className="rounded-xl border border-zinc-800 px-3.5 py-2 text-xs font-medium text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200 cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={confirmDeleteNote}
-                disabled={isDeleting}
-                className="rounded-xl bg-rose-500 px-4 py-2 text-xs font-bold text-white hover:bg-rose-400 active:scale-95 disabled:opacity-50 transition-all cursor-pointer shadow-lg shadow-rose-500/20"
-              >
-                {isDeleting ? 'Deleting...' : 'Yes, Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ── Modals & Dialogs ───────────────────────────────────────────────────── */}
+      <NoteDetailModal
+        note={detailNote}
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        onEdit={handleOpenEdit}
+        onDelete={handlePromptDelete}
+      />
 
-      {/* ── Create / Edit Note Modal ──────────────────────────────────────────── */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div
-            className="fixed inset-0 bg-black/80 backdrop-blur-sm"
-            onClick={() => !isSaving && setIsModalOpen(false)}
-          />
+      <NoteEditorModal
+        isOpen={isEditorOpen}
+        onClose={() => setIsEditorOpen(false)}
+        onSave={handleSaveNote}
+        editingNote={editingNote}
+        availableTags={tags}
+      />
 
-          <div className="relative z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-              <h3 className="text-base font-semibold text-zinc-100">
-                {editingNoteId ? 'Edit Note' : 'Create New Research Note'}
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="rounded-lg p-1.5 text-zinc-500 hover:bg-zinc-900 hover:text-zinc-300"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveNote} className="mt-4 space-y-4">
-              {error && (
-                <div className="rounded-xl border border-rose-500/20 bg-rose-950/30 p-2.5 text-xs text-rose-400">
-                  {error}
-                </div>
-              )}
-
-              <div>
-                <label className="block text-xs font-medium text-zinc-400">Title</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Lithium-Sulfur Battery Limitations"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/60 px-3.5 py-2.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-[#AAFFC7] focus:ring-1 focus:ring-[#AAFFC7]/50"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-zinc-400">Note Content (Markdown supported)</label>
-                <textarea
-                  rows={6}
-                  placeholder="Write your research findings, citations, or notes..."
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/60 p-3.5 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-[#AAFFC7] focus:ring-1 focus:ring-[#AAFFC7]/50 resize-none font-mono"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400">Tags (comma-separated)</label>
-                  <input
-                    type="text"
-                    placeholder="battery, methodology, review"
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-[#AAFFC7]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-medium text-zinc-400">Source URL (Optional)</label>
-                  <input
-                    type="url"
-                    placeholder="https://arxiv.org/abs/..."
-                    value={sourceUrl}
-                    onChange={(e) => setSourceUrl(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs text-zinc-100 placeholder-zinc-500 outline-none focus:border-[#AAFFC7]"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="rounded-xl border border-zinc-800 px-4 py-2 text-xs font-medium text-zinc-400 hover:bg-zinc-900 hover:text-zinc-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="flex items-center gap-2 rounded-xl bg-[#AAFFC7] px-5 py-2 text-xs font-bold text-black hover:bg-[#99f3b8] active:scale-95 disabled:opacity-50 transition-all shadow-md shadow-[#AAFFC7]/20 cursor-pointer"
-                >
-                  {isSaving ? 'Saving & Vectorizing...' : editingNoteId ? 'Update Note' : 'Save Note'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingNoteId)}
+        onClose={() => setDeletingNoteId(null)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        noteTitle={deletingNoteObject?.title}
+      />
     </div>
   );
 }

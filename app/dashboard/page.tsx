@@ -1,9 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Navbar } from '@/src/components/Navbar';
 import { useResearchHistory } from '@/src/hooks/useResearch';
 import { useUser, useIsAuthenticated } from '@/src/store/authStore';
+import { useWalletStore } from '@/src/store/walletStore';
+import { noteService } from '@/src/services/noteService';
+import { paperService } from '@/src/services/paperService';
 import { Job } from '@/src/types/research';
 import { TransitionLink } from '@/src/components/TransitionLink';
 
@@ -20,14 +23,58 @@ type HoveredMetricPoint = {
 export default function DashboardPage() {
   const user = useUser();
   const isAuthenticated = useIsAuthenticated();
-  
-  // TanStack Query: cached across navigations, no duplicate requests on re-mount
-  const { data: historyData, isLoading: loading } = useResearchHistory(user?.userId, 50, isAuthenticated);
+  const effectiveUserId = user?.userId || (user as any)?.id || (user as any)?._id;
+
+  const { balanceBDT, fetchWalletBalance } = useWalletStore();
+
+  // TanStack Query: auto-polls in real-time every 3.5s, refetches on focus and mount
+  const {
+    data: historyData,
+    isLoading: loading,
+    refetch: refetchHistory,
+    isRefetching,
+  } = useResearchHistory(effectiveUserId, 50, isAuthenticated);
+
   const history: Job[] = historyData?.data?.records ?? [];
+
+  // Workspace stats: Notes & Papers
+  const [totalNotes, setTotalNotes] = useState<number>(0);
+  const [totalPapers, setTotalPapers] = useState<number>(0);
+  const [lastRefreshedAt, setLastRefreshedAt] = useState<Date>(new Date());
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeMetric, setActiveMetric] = useState<'quality' | 'factCheck' | 'duration'>('quality');
   const [hoveredPoint, setHoveredPoint] = useState<HoveredMetricPoint | null>(null);
+
+  // Load workspace counts (Notes & Papers) & Wallet
+  const loadWorkspaceStats = useCallback(async () => {
+    if (!isAuthenticated) return;
+    try {
+      fetchWalletBalance();
+      const [notes, papers] = await Promise.allSettled([
+        noteService.getAllNotes(),
+        paperService.getAllPapers(),
+      ]);
+
+      if (notes.status === 'fulfilled') setTotalNotes(notes.value.length);
+      if (papers.status === 'fulfilled') setTotalPapers(papers.value.length);
+      setLastRefreshedAt(new Date());
+    } catch {
+      // Best-effort non-blocking load
+    }
+  }, [isAuthenticated, fetchWalletBalance]);
+
+  useEffect(() => {
+    loadWorkspaceStats();
+    const interval = setInterval(() => {
+      loadWorkspaceStats();
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [loadWorkspaceStats]);
+
+  const handleManualRefresh = async () => {
+    await Promise.all([refetchHistory(), loadWorkspaceStats()]);
+  };
 
   // Helper to parse created_at timestamp safely
   const parseCreatedAt = (val: any): Date => {
@@ -51,18 +98,30 @@ export default function DashboardPage() {
   // Calculate statistics from the filtered set
   const totalReports = filteredHistory.length;
   const completedReports = filteredHistory.filter((h) => h.result);
-  
-  const avgCritique = completedReports.length > 0
-    ? (completedReports.reduce((acc, h) => acc + (h.result?.critique_score || 0), 0) / completedReports.length).toFixed(1)
-    : '0.0';
 
-  const avgFactCheck = completedReports.length > 0
-    ? (completedReports.reduce((acc, h) => acc + (h.result?.fact_check_score || 0) * 100, 0) / completedReports.length).toFixed(0)
-    : '0';
+  const avgCritique =
+    completedReports.length > 0
+      ? (
+          completedReports.reduce((acc, h) => acc + (h.result?.critique_score || 0), 0) /
+          completedReports.length
+        ).toFixed(1)
+      : '0.0';
 
-  const avgTime = completedReports.length > 0
-    ? (completedReports.reduce((acc, h) => acc + (h.result?.time_sec || 0), 0) / completedReports.length).toFixed(0)
-    : '0';
+  const avgFactCheck =
+    completedReports.length > 0
+      ? (
+          (completedReports.reduce((acc, h) => acc + (h.result?.fact_check_score || 0) * 100, 0) /
+            completedReports.length)
+        ).toFixed(0)
+      : '0';
+
+  const avgTime =
+    completedReports.length > 0
+      ? (
+          completedReports.reduce((acc, h) => acc + (h.result?.time_sec || 0), 0) /
+          completedReports.length
+        ).toFixed(0)
+      : '0';
 
   // Mock telemetry for empty-state preview
   const mockTelemetry = [
@@ -73,16 +132,20 @@ export default function DashboardPage() {
     { label: 'Run 5', topic: 'AI Agent Architectures in 2026', quality: 8.5, factCheck: 92, duration: 98, date: 'May 28' },
   ];
 
-  const activeData = completedReports.length > 0
-    ? [...completedReports].reverse().map((h, idx) => ({
-        label: `Run ${idx + 1}`,
-        topic: h.result?.topic || 'Untitled Run',
-        quality: h.result?.critique_score || 0,
-        factCheck: (h.result?.fact_check_score || 0) * 100,
-        duration: h.result?.time_sec || 0,
-        date: parseCreatedAt(h.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      }))
-    : mockTelemetry;
+  const activeData =
+    completedReports.length > 0
+      ? [...completedReports].reverse().map((h, idx) => ({
+          label: `Run ${idx + 1}`,
+          topic: h.result?.topic || 'Untitled Run',
+          quality: h.result?.critique_score || 0,
+          factCheck: (h.result?.fact_check_score || 0) * 100,
+          duration: h.result?.time_sec || 0,
+          date: parseCreatedAt(h.created_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+          }),
+        }))
+      : mockTelemetry;
 
   const isMock = completedReports.length === 0;
 
@@ -97,8 +160,8 @@ export default function DashboardPage() {
   // Calculate coordinates for graph nodes
   const points = activeData.map((d, idx) => {
     const val = activeMetric === 'quality' ? d.quality : activeMetric === 'factCheck' ? d.factCheck : d.duration;
-    const x = 55 + (idx * (890 / Math.max(1, activeData.length - 1)));
-    const y = 250 - (val * (200 / maxVal));
+    const x = 55 + idx * (890 / Math.max(1, activeData.length - 1));
+    const y = 250 - val * (200 / maxVal);
     return { x, y, data: d, val };
   });
 
@@ -106,7 +169,7 @@ export default function DashboardPage() {
   let linePath = '';
   let areaPath = '';
   if (points.length > 0) {
-    linePath = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map(p => `L ${p.x} ${p.y}`).join(' ');
+    linePath = `M ${points[0].x} ${points[0].y} ` + points.slice(1).map((p) => `L ${p.x} ${p.y}`).join(' ');
     areaPath = `${linePath} L ${points[points.length - 1].x} 250 L ${points[0].x} 250 Z`;
   }
 
@@ -161,64 +224,122 @@ export default function DashboardPage() {
         {/* Header section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-5 sm:gap-6 mb-10 sm:mb-12">
           <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 border border-black/10 text-black/60 text-[10px] font-bold tracking-[0.2em] uppercase mb-3 sm:mb-4 backdrop-blur-md">
-              <span className="size-1.5 rounded-full bg-[#34D399]" />
-              Researcher Control Hub
-            </span>
+            <div className="flex items-center gap-2 mb-3 sm:mb-4 flex-wrap">
+              <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 border border-black/10 text-black/60 text-[10px] font-bold tracking-[0.2em] uppercase backdrop-blur-md">
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse" />
+                Live Real-Time Telemetry
+              </span>
+
+              <button
+                type="button"
+                onClick={handleManualRefresh}
+                disabled={isRefetching}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/5 border border-black/10 text-black/70 hover:text-black hover:bg-black/10 text-[10px] font-bold transition-all cursor-pointer backdrop-blur-md"
+                title="Refresh real-time data"
+              >
+                <svg
+                  className={`w-3 h-3 ${isRefetching ? 'animate-spin text-emerald-700' : ''}`}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+                </svg>
+                <span>{isRefetching ? 'Syncing...' : 'Sync Now'}</span>
+              </button>
+            </div>
+
             <h1 className="font-metamorphous text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-light text-[#11100d] leading-none tracking-tight">
               Welcome back,<br />
-              <span className="font-semibold text-emerald-800">{user?.name || user?.email?.split('@')[0] || 'Researcher'}</span>
+              <span className="font-semibold text-emerald-800">
+                {user?.name || user?.email?.split('@')[0] || 'Researcher'}
+              </span>
             </h1>
             <p className="font-roboto text-sm text-black/60 mt-3 max-w-[500px]">
-              Access your previous deep multi-agent research logs, quality diagnostics, and run new analysis runs.
+              Live monitoring of multi-agent research runs, paper drafts, literature notes vault, and workspace diagnostics.
             </p>
           </div>
 
-          <TransitionLink
-            href="/research"
-            className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-5 sm:px-6 py-3 sm:py-3.5 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_15px_35px_rgba(0,0,0,0.15)] transition-transform duration-300 hover:-translate-y-0.5 w-full md:w-auto justify-center"
-          >
-            <span>New Research Run</span>
-            <span className="relative flex size-6 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1">
-              &gt;
-            </span>
-          </TransitionLink>
+          <div className="flex flex-wrap items-center gap-3">
+            <TransitionLink
+              href="/notes"
+              className="inline-flex items-center gap-2 rounded-full bg-white/70 border border-black/10 px-5 py-3 text-xs font-bold text-black/80 hover:bg-white transition-all shadow-sm"
+            >
+              <span>Notes Vault ({totalNotes})</span>
+            </TransitionLink>
+
+            <TransitionLink
+              href="/papers"
+              className="inline-flex items-center gap-2 rounded-full bg-white/70 border border-black/10 px-5 py-3 text-xs font-bold text-black/80 hover:bg-white transition-all shadow-sm"
+            >
+              <span>Paper Studio ({totalPapers})</span>
+            </TransitionLink>
+
+            <TransitionLink
+              href="/research"
+              className="group relative inline-flex items-center gap-3 overflow-hidden rounded-full bg-gradient-to-r from-black via-[#191919] to-[#3a3a3a] px-5 sm:px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-[0_15px_35px_rgba(0,0,0,0.15)] transition-transform duration-300 hover:-translate-y-0.5"
+            >
+              <span>New Research Run</span>
+              <span className="relative flex size-6 items-center justify-center rounded-full bg-[#AAFFC7] text-black transition-transform duration-300 group-hover:translate-x-1 font-bold">
+                →
+              </span>
+            </TransitionLink>
+          </div>
         </div>
 
         {/* Stats Section */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
           {/* Card 1 */}
           <div className="bg-white/40 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_15px_40px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">Total Reports</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">
+              Total Reports
+            </span>
             <div>
-              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-black/90">{totalReports}</span>
+              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-black/90">
+                {totalReports}
+              </span>
               <span className="text-xs text-black/45 font-mono ml-2">queries</span>
             </div>
           </div>
 
           {/* Card 2 */}
           <div className="bg-white/40 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_15px_40px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">Avg Quality Score</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">
+              Avg Quality Score
+            </span>
             <div>
-              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-emerald-800">{avgCritique}</span>
-              <span className="text-xs text-[#047857] font-semibold bg-emerald-100/50 px-2 py-0.5 rounded-full ml-2">/10</span>
+              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-emerald-800">
+                {avgCritique}
+              </span>
+              <span className="text-xs text-[#047857] font-semibold bg-emerald-100/50 px-2 py-0.5 rounded-full ml-2">
+                /10
+              </span>
             </div>
           </div>
 
           {/* Card 3 */}
           <div className="bg-white/40 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_15px_40px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">Avg Fact Check</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">
+              Avg Fact Check
+            </span>
             <div>
-              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-purple-800">{avgFactCheck}%</span>
+              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-purple-800">
+                {avgFactCheck}%
+              </span>
               <span className="text-xs text-purple-800/60 font-mono ml-2">trust</span>
             </div>
           </div>
 
           {/* Card 4 */}
           <div className="bg-white/40 backdrop-blur-xl border border-black/10 rounded-3xl p-6 shadow-[0_15px_40px_rgba(0,0,0,0.02)] flex flex-col justify-between">
-            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">Avg Pipeline Run</span>
+            <span className="font-mono text-[10px] uppercase tracking-widest text-black/45 font-bold block mb-4">
+              Avg Pipeline Run
+            </span>
             <div>
-              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-amber-800">{avgTime}s</span>
+              <span className="font-metamorphous text-4xl sm:text-5xl font-extrabold text-amber-800">
+                {avgTime}s
+              </span>
               <span className="text-xs text-black/45 font-mono ml-2">speed</span>
             </div>
           </div>
@@ -237,9 +358,9 @@ export default function DashboardPage() {
                 )}
               </h3>
               <p className="font-roboto text-xs text-black/50 mt-1">
-                {isMock 
-                  ? "Awaiting research runs. Showing demo trend of your future workspace diagnostics."
-                  : "Interactive timeline tracking quality scores and agent performance criteria."}
+                {isMock
+                  ? 'Awaiting research runs. Showing demo trend of your future workspace diagnostics.'
+                  : 'Real-time timeline tracking quality scores, fact-check ratings, and pipeline execution times.'}
               </p>
             </div>
 
@@ -247,7 +368,7 @@ export default function DashboardPage() {
             <div className="flex flex-wrap bg-black/5 p-1 rounded-full border border-black/10 backdrop-blur-md gap-1">
               <button
                 onClick={() => setActiveMetric('quality')}
-                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeMetric === 'quality'
                     ? 'bg-emerald-800 text-white shadow-sm'
                     : 'text-black/60 hover:text-black'
@@ -257,7 +378,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setActiveMetric('factCheck')}
-                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeMetric === 'factCheck'
                     ? 'bg-purple-800 text-white shadow-sm'
                     : 'text-black/60 hover:text-black'
@@ -267,7 +388,7 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={() => setActiveMetric('duration')}
-                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all ${
+                className={`px-4 py-2 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer ${
                   activeMetric === 'duration'
                     ? 'bg-amber-800 text-white shadow-sm'
                     : 'text-black/60 hover:text-black'
@@ -280,11 +401,8 @@ export default function DashboardPage() {
 
           {/* SVG Graph rendering */}
           <div className="relative w-full overflow-hidden mt-6 bg-[#f7f5ef]/40 rounded-2xl border border-black/5 p-4">
-            <svg
-              viewBox="0 0 1000 300"
-              className="w-full h-auto overflow-visible select-none"
-            >
-              {/* Defs for premium gradients */}
+            <svg viewBox="0 0 1000 300" className="w-full h-auto overflow-visible select-none">
+              {/* Defs for gradients */}
               <defs>
                 <linearGradient id="gradient-emerald" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#10B981" stopOpacity="0.25" />
@@ -333,13 +451,11 @@ export default function DashboardPage() {
               {/* Graph Lines and Area */}
               {points.length > 1 && (
                 <>
-                  {/* Filled Area */}
                   <path
                     d={areaPath}
                     fill={theme.fillUrl}
                     className="transition-all duration-500 ease-in-out"
                   />
-                  {/* Line stroke */}
                   <path
                     d={linePath}
                     fill="none"
@@ -362,7 +478,6 @@ export default function DashboardPage() {
                     onMouseLeave={() => setHoveredPoint(null)}
                     className="cursor-pointer"
                   >
-                    {/* Hover glow ring */}
                     <circle
                       cx={p.x}
                       cy={p.y}
@@ -371,7 +486,6 @@ export default function DashboardPage() {
                       fillOpacity={isHovered ? 0.15 : 0}
                       className="transition-all duration-200"
                     />
-                    {/* Core node */}
                     <circle
                       cx={p.x}
                       cy={p.y}
@@ -381,7 +495,6 @@ export default function DashboardPage() {
                       strokeWidth="1.5"
                       className="transition-all duration-200 shadow-sm"
                     />
-                    {/* X Axis Labels */}
                     <text
                       x={p.x}
                       y="275"
@@ -397,9 +510,7 @@ export default function DashboardPage() {
               })}
             </svg>
 
-
-
-            {/* Interactive Tooltip Overlay */}
+            {/* Tooltip Overlay */}
             {hoveredPoint && (
               <div
                 className="absolute z-20 bg-black/90 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-white text-xs shadow-xl pointer-events-none w-64 transition-all duration-150"
@@ -413,9 +524,7 @@ export default function DashboardPage() {
                   <span className="font-mono text-[9px] uppercase tracking-widest text-emerald-400 font-bold">
                     {hoveredPoint.label}
                   </span>
-                  <span className="font-mono text-[9px] text-white/55">
-                    {hoveredPoint.date}
-                  </span>
+                  <span className="font-mono text-[9px] text-white/55">{hoveredPoint.date}</span>
                 </div>
                 <p className="font-roboto font-bold text-[11px] truncate mb-2 text-white/95">
                   {hoveredPoint.topic}
