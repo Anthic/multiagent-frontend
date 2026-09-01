@@ -9,8 +9,39 @@ import { PaperStatsBar } from '@/src/components/papers/PaperStatsBar';
 import { PaperSkeleton } from '@/src/components/papers/PaperSkeleton';
 import { PaperEditor } from '@/src/components/papers/PaperEditor';
 import { DeletePaperModal } from '@/src/components/papers/DeletePaperModal';
+import { SlideGeneratorModal } from '@/src/components/papers/SlideGeneratorModal';
 
 type StatusFilter = 'all' | 'draft' | 'in_review' | 'published' | 'archived';
+
+const TEMPLATES: Array<{
+  id: string;
+  name: string;
+  desc: string;
+  icon: string;
+  content: string;
+}> = [
+  {
+    id: 'imrad',
+    name: 'IMRaD Scientific Paper',
+    desc: 'Introduction, Methods, Results, Discussion, and Conclusion',
+    icon: '🔬',
+    content: `# Introduction\n### Background & Objectives\nDescribe the core problem statement, research questions, and domain significance.\n\n# Methodology\n### Experimental Setup & Architecture\nDetail your data pipelines, algorithms, baseline models, and evaluation protocols.\n\n# Results & Findings\n### Empirical Benchmarks\nPresent comparative metrics, key observations, and statistical data.\n\n# Discussion & Limitations\n### Theoretical & Practical Implications\nAnalyze validity, unexpected behaviors, and architectural trade-offs.\n\n# Conclusion\nSummarize main contributions and future research directions.\n`,
+  },
+  {
+    id: 'lit_review',
+    name: 'Literature Review & Gap Synthesis',
+    desc: 'Systematic taxonomy, synthesis matrix, and literature gaps',
+    icon: '📚',
+    content: `# Introduction & Scope\nDefine the taxonomy, survey boundaries, and selection criteria for reviewed literature.\n\n# Thematic Literature Synthesis\n### Core Paradigms\nCategorize and critically review prevailing methods and benchmark architectures.\n\n# Identified Literature Gaps\nHighlight unaddressed challenges, scalability bottlenecks, and validation voids.\n\n# Strategic Future Roadmap\nPropose novel methodologies to address the identified literature gaps.\n`,
+  },
+  {
+    id: 'short_paper',
+    name: 'Conference Short / Workshop Paper',
+    desc: 'Compact 4-page format focused on novelty and preliminary results',
+    icon: '⚡',
+    content: `# 1. Motivation & Problem Statement\nState the specific challenge and why existing solutions are insufficient.\n\n# 2. Proposed Novel Approach\nExplain your design principles, algorithmic formulation, or prototype.\n\n# 3. Preliminary Experiments\nHighlight initial benchmark gains and validation metrics.\n\n# 4. Impact & Next Steps\nKey takeaways for the workshop community.\n`,
+  },
+];
 
 export default function PapersStudioPage() {
   const [papers, setPapers] = useState<IPaper[]>([]);
@@ -23,6 +54,15 @@ export default function PapersStudioPage() {
   // Active Editor State
   const [activePaper, setActivePaper] = useState<IPaper | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+
+  // Slide Generator / Viewer State
+  const [slideModalPaper, setSlideModalPaper] = useState<IPaper | null>(null);
+
+  // Template Dropdown Toggle
+  const [isTemplateMenuOpen, setIsTemplateMenuOpen] = useState(false);
+
+  // Guide Banner Collapse State
+  const [isGuideDismissed, setIsGuideDismissed] = useState(false);
 
   // Delete Confirmation Dialog
   const [deletingPaperId, setDeletingPaperId] = useState<string | null>(null);
@@ -48,12 +88,14 @@ export default function PapersStudioPage() {
     fetchPapers();
   }, [fetchPapers]);
 
-  const handleOpenCreatePaper = async () => {
+  const handleOpenCreatePaper = async (templateContent?: string, templateTitle?: string) => {
+    setIsTemplateMenuOpen(false);
     try {
       const newPaper = await paperService.createPaper({
-        title: 'Untitled Research Paper',
+        title: templateTitle || 'Untitled Research Paper',
         abstract: '',
-        contentMarkdown: '# Introduction\n\nStart writing your research findings here...\n',
+        contentMarkdown:
+          templateContent || '# Introduction\n\nStart writing your research findings here...\n',
         status: 'draft',
         citations: [],
       });
@@ -63,7 +105,7 @@ export default function PapersStudioPage() {
       showAppToast({
         type: 'success',
         title: 'Paper Created',
-        message: 'New research draft ready for writing.',
+        message: templateTitle ? `Created paper from ${templateTitle} template.` : 'New research draft ready for writing.',
       });
     } catch {
       showAppToast({
@@ -89,6 +131,22 @@ export default function PapersStudioPage() {
       prev.map((p) => ((p.id || p._id) === paperId ? { ...p, ...updated } : p)),
     );
     setActivePaper((prev) => (prev ? { ...prev, ...updated } : null));
+  };
+
+  const handleSaveSlidesForPaper = async (slidesMarkdown: string, slideCount: number) => {
+    if (!slideModalPaper) return;
+    const paperId = slideModalPaper.id || slideModalPaper._id;
+    if (!paperId) return;
+
+    const updated = await paperService.updatePaper(paperId, {
+      slidesMarkdown,
+      slideCount,
+    });
+
+    setPapers((prev) =>
+      prev.map((p) => ((p.id || p._id) === paperId ? { ...p, ...updated } : p)),
+    );
+    setSlideModalPaper((prev) => (prev ? { ...prev, ...updated } : null));
   };
 
   const handleAddCitationToActivePaper = async (citation: ICitation) => {
@@ -185,11 +243,11 @@ export default function PapersStudioPage() {
         </div>
       </div>
 
-      {/* ── Page Header ───────────────────────────────────────────────────────── */}
+      {/* ── Page Header & Quick Creation Actions ───────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#AAFFC7]/15 text-[#AAFFC7] font-bold shadow-sm shadow-[#AAFFC7]/20 border border-[#AAFFC7]/30">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#AAFFC7]/15 text-[#AAFFC7] font-bold shadow-sm shadow-[#AAFFC7]/20 border border-[#AAFFC7]/30">
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
@@ -202,22 +260,139 @@ export default function PapersStudioPage() {
             </h1>
           </div>
           <p className="mt-1.5 text-xs sm:text-sm text-zinc-400 max-w-2xl leading-relaxed">
-            Draft, refine, and publish scientific literature with integrated AI paraphrasing, citations management, and peer review simulation.
+            Draft scientific literature, paraphrase with AI, manage citations, simulate peer reviews, and generate 1-click Marp presentation slide decks.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={handleOpenCreatePaper}
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#AAFFC7] px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold text-black hover:bg-[#94f5b4] active:scale-95 transition-all shadow-lg shadow-[#AAFFC7]/20 cursor-pointer self-start sm:self-auto shrink-0"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          <span>New Paper</span>
-        </button>
+        {/* Action Buttons: New Paper & Templates */}
+        <div className="flex items-center gap-2 self-start sm:self-auto shrink-0 relative">
+          {/* Template Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsTemplateMenuOpen(!isTemplateMenuOpen)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900/80 px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-zinc-300 hover:bg-zinc-800 hover:text-white transition-all cursor-pointer"
+            >
+              <span>📋 Templates</span>
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="m6 9 6 6 6-6" />
+              </svg>
+            </button>
+
+            {isTemplateMenuOpen && (
+              <div className="absolute right-0 mt-2 w-72 sm:w-80 rounded-2xl border border-zinc-800 bg-zinc-950 p-2 shadow-2xl z-30 space-y-1 animate-in fade-in zoom-in-95 duration-150">
+                <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                  Select Academic Template
+                </div>
+                {TEMPLATES.map((tmpl) => (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => handleOpenCreatePaper(tmpl.content, tmpl.name)}
+                    className="w-full flex items-start gap-2.5 rounded-xl p-2.5 text-left hover:bg-zinc-900 transition-colors cursor-pointer group"
+                  >
+                    <span className="text-lg">{tmpl.icon}</span>
+                    <div>
+                      <p className="text-xs font-bold text-zinc-200 group-hover:text-[#AAFFC7] transition-colors">
+                        {tmpl.name}
+                      </p>
+                      <p className="text-[11px] text-zinc-400 leading-snug">{tmpl.desc}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleOpenCreatePaper()}
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#AAFFC7] px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold text-black hover:bg-[#94f5b4] active:scale-95 transition-all shadow-lg shadow-[#AAFFC7]/20 cursor-pointer"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            <span>New Paper</span>
+          </button>
+        </div>
       </div>
+
+      {/* ── User-Friendly 4-Step Interactive Workflow Guide ───────────────────── */}
+      {!isGuideDismissed && (
+        <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-gradient-to-r from-emerald-950/20 via-zinc-950/80 to-zinc-950 p-5 backdrop-blur-xl relative overflow-hidden">
+          <div className="flex items-center justify-between gap-2 border-b border-emerald-500/10 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-[#AAFFC7]" />
+              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 font-mono">
+                Academic Studio Workflow Guide
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsGuideDismissed(true)}
+              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+              title="Dismiss guide banner"
+            >
+              Hide Guide ✕
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Step 1 */}
+            <div className="flex items-start gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-sm font-bold text-white">
+                1
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-zinc-200">📝 Draft & Outline</h4>
+                <p className="mt-1 text-[11px] text-zinc-400 leading-relaxed">
+                  Compose research in rich Markdown with auto-generated outline structure.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className="flex items-start gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-sm font-bold text-[#AAFFC7]">
+                2
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-zinc-200">⚡ AI Paraphrase</h4>
+                <p className="mt-1 text-[11px] text-zinc-400 leading-relaxed">
+                  Highlight sentences to rewrite in Academic, Simplified, or Humanize modes.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className="flex items-start gap-3 rounded-xl border border-zinc-800/80 bg-zinc-900/40 p-3.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-800 text-sm font-bold text-cyan-400">
+                3
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-zinc-200">📚 Citations & Review</h4>
+                <p className="mt-1 text-[11px] text-zinc-400 leading-relaxed">
+                  Link DOI citations and simulate 3-agent academic peer reviews.
+                </p>
+              </div>
+            </div>
+
+            {/* Step 4 */}
+            <div className="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-950/20 p-3.5">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-900/60 text-sm font-bold text-[#AAFFC7]">
+                4
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-emerald-300">📑 1-Click Slides</h4>
+                <p className="mt-1 text-[11px] text-zinc-400 leading-relaxed">
+                  Turn your paper into a 8-12 slide Marp conference deck with speaker cues.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Stats Summary Bar ─────────────────────────────────────────────────── */}
       <div className="mt-6">
@@ -322,7 +497,7 @@ export default function PapersStudioPage() {
               ) : (
                 <button
                   type="button"
-                  onClick={handleOpenCreatePaper}
+                  onClick={() => handleOpenCreatePaper()}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#AAFFC7] px-5 py-2.5 text-xs font-bold text-black hover:bg-[#94f5b4] active:scale-95 transition-all shadow-md shadow-[#AAFFC7]/20 cursor-pointer"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -342,6 +517,7 @@ export default function PapersStudioPage() {
                 paper={paper}
                 onOpen={handleOpenExistingPaper}
                 onDelete={(id) => setDeletingPaperId(id)}
+                onOpenSlides={(p) => setSlideModalPaper(p)}
               />
             ))}
           </div>
@@ -359,6 +535,18 @@ export default function PapersStudioPage() {
           }}
           onDelete={(id) => setDeletingPaperId(id)}
           onAddCitation={handleAddCitationToActivePaper}
+        />
+      )}
+
+      {/* Slide Deck Generator Modal from Card */}
+      {slideModalPaper && (
+        <SlideGeneratorModal
+          isOpen={Boolean(slideModalPaper)}
+          onClose={() => setSlideModalPaper(null)}
+          paperTitle={slideModalPaper.title}
+          paperContent={slideModalPaper.contentMarkdown || slideModalPaper.abstract}
+          initialSlidesMarkdown={slideModalPaper.slidesMarkdown}
+          onSaveSlides={handleSaveSlidesForPaper}
         />
       )}
 

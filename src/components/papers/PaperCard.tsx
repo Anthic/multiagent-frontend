@@ -7,6 +7,7 @@ interface PaperCardProps {
   paper: IPaper;
   onOpen: (paper: IPaper) => void;
   onDelete: (paperId: string) => void;
+  onOpenSlides?: (paper: IPaper) => void;
 }
 
 function formatRelativeTime(dateString?: string | Date): string {
@@ -62,7 +63,7 @@ const statusConfig: Record<
   },
 };
 
-export function PaperCard({ paper, onOpen, onDelete }: PaperCardProps) {
+export function PaperCard({ paper, onOpen, onDelete, onOpenSlides }: PaperCardProps) {
   const paperId = paper.id || paper._id || '';
   const status = paper.status || 'draft';
   const statusBadge = statusConfig[status] || statusConfig.draft;
@@ -117,6 +118,13 @@ export function PaperCard({ paper, onOpen, onDelete }: PaperCardProps) {
             <span>{citationCount} {citationCount === 1 ? 'citation' : 'citations'}</span>
           </span>
 
+          {paper.slidesMarkdown ? (
+            <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-[11px] font-medium text-emerald-400">
+              <span>📑</span>
+              <span>{paper.slideCount || 8} Slides</span>
+            </span>
+          ) : null}
+
           {paper.peerReviewResults && (
             <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-2 py-1 text-[11px] font-medium text-emerald-400">
               <svg className="w-3 h-3 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -139,7 +147,21 @@ export function PaperCard({ paper, onOpen, onDelete }: PaperCardProps) {
           <span>Updated {relativeTime}</span>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          {onOpenSlides && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenSlides(paper);
+              }}
+              className="inline-flex items-center gap-1 rounded-xl bg-zinc-900 border border-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-300 hover:text-emerald-300 hover:border-emerald-500/40 transition-all cursor-pointer"
+              title="Generate or view slides"
+            >
+              <span>📑 Slides</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={(e) => {
@@ -148,7 +170,7 @@ export function PaperCard({ paper, onOpen, onDelete }: PaperCardProps) {
             }}
             className="inline-flex items-center gap-1 rounded-xl bg-zinc-900 border border-zinc-800 px-3 py-1 text-xs font-semibold text-zinc-300 hover:bg-[#AAFFC7] hover:text-black hover:border-[#AAFFC7] transition-all cursor-pointer"
           >
-            <span>Open Paper</span>
+            <span>Open</span>
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14" />
               <path d="m12 5 7 7-7 7" />

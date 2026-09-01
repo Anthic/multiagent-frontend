@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { IPaper, ICitation } from '@/src/services/paperService';
 import { IntegratedParaphrasePanel } from './IntegratedParaphrasePanel';
 import { AddCitationModal } from './AddCitationModal';
+import { SlideGeneratorModal } from './SlideGeneratorModal';
 import { showAppToast } from '@/src/components/ui/appToastEvents';
 
 interface PaperEditorProps {
@@ -26,9 +27,11 @@ export function PaperEditor({
   const [contentMarkdown, setContentMarkdown] = useState(paper.contentMarkdown || '');
   const [status, setStatus] = useState<IPaper['status']>(paper.status || 'draft');
   const [citations, setCitations] = useState<ICitation[]>(paper.citations || []);
+  const [slidesMarkdown, setSlidesMarkdown] = useState<string>(paper.slidesMarkdown || '');
+  const [slideCount, setSlideCount] = useState<number>(paper.slideCount || 0);
 
   const [activeTab, setActiveTab] = useState<'write' | 'preview'>('write');
-  const [activeSidebarTab, setActiveSidebarTab] = useState<'outline' | 'citations' | 'notes' | 'review'>('outline');
+  const [activeSidebarTab, setActiveSidebarTab] = useState<'outline' | 'citations' | 'slides' | 'review'>('outline');
   const [isAiPanelOpen, setIsAiPanelOpen] = useState(true);
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
@@ -36,6 +39,7 @@ export function PaperEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedTime, setLastSavedTime] = useState<Date>(new Date());
   const [isAddCitationOpen, setIsAddCitationOpen] = useState(false);
+  const [isSlideModalOpen, setIsSlideModalOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -46,7 +50,28 @@ export function PaperEditor({
     setContentMarkdown(paper.contentMarkdown || '');
     setStatus(paper.status || 'draft');
     setCitations(paper.citations || []);
+    setSlidesMarkdown(paper.slidesMarkdown || '');
+    setSlideCount(paper.slideCount || 0);
   }, [paper]);
+
+  const handleSaveSlides = async (newSlidesMarkdown: string, count: number) => {
+    setSlidesMarkdown(newSlidesMarkdown);
+    setSlideCount(count);
+    await onSave({
+      slidesMarkdown: newSlidesMarkdown,
+      slideCount: count,
+    });
+  };
+
+  const insertTemplateSection = (secTitle: string) => {
+    const template = `\n\n## ${secTitle}\nWrite ${secTitle.toLowerCase()} findings and analysis here...\n`;
+    setContentMarkdown((prev) => prev + template);
+    showAppToast({
+      type: 'info',
+      title: 'Section Inserted',
+      message: `Appended "## ${secTitle}" to research document.`,
+    });
+  };
 
   // Keyboard shortcut for saving (Ctrl+S / Cmd+S)
   useEffect(() => {
@@ -273,6 +298,23 @@ export function PaperEditor({
             </button>
           </div>
 
+          {/* Presentation Slides Generator & Viewer */}
+          <button
+            type="button"
+            onClick={() => setIsSlideModalOpen(true)}
+            className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+              slidesMarkdown
+                ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/50 shadow-sm shadow-emerald-950/30'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-800'
+            }`}
+            title="Generate or Present Marp Slide Deck"
+          >
+            <span>📑</span>
+            <span className="hidden sm:inline">
+              {slidesMarkdown ? `Slides (${slideCount || 8})` : 'Presentation Slides'}
+            </span>
+          </button>
+
           {/* AI Tools Toggle Button */}
           <button
             type="button"
@@ -301,7 +343,7 @@ export function PaperEditor({
 
       {/* ── Main Workspace Body ──────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* ── Left Sidebar (Outline, Citations, Notes, Review) ───────────────── */}
+        {/* ── Left Sidebar (Outline, Citations, Slides, Review) ───────────────── */}
         <aside className="w-72 lg:w-80 border-r border-zinc-800/80 bg-zinc-950/60 hidden md:flex flex-col shrink-0">
           {/* Sidebar Navigation Tabs */}
           <div className="flex items-center border-b border-zinc-800/80 p-2 gap-1 bg-zinc-950">
@@ -329,6 +371,17 @@ export function PaperEditor({
             </button>
             <button
               type="button"
+              onClick={() => setActiveSidebarTab('slides')}
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
+                activeSidebarTab === 'slides'
+                  ? 'bg-zinc-800 text-emerald-400'
+                  : 'text-zinc-400 hover:text-zinc-200'
+              }`}
+            >
+              Slides {slidesMarkdown ? '✓' : ''}
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveSidebarTab('review')}
               className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
                 activeSidebarTab === 'review'
@@ -344,9 +397,12 @@ export function PaperEditor({
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {activeSidebarTab === 'outline' && (
               <div className="space-y-3">
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
-                  Paper Structure
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    Paper Structure
+                  </h4>
+                  <span className="text-[10px] text-zinc-500">Auto generated</span>
+                </div>
                 <div className="space-y-1 text-xs">
                   <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60 text-zinc-300 font-medium flex items-center gap-2">
                     <svg className="w-3.5 h-3.5 text-[#AAFFC7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -361,7 +417,7 @@ export function PaperEditor({
                       <line x1="8" y1="12" x2="21" y2="12" />
                       <line x1="8" y1="18" x2="21" y2="18" />
                     </svg>
-                    <span>Main Content</span>
+                    <span>Main Research Body</span>
                   </div>
                   <div className="p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/60 text-zinc-300 font-medium flex items-center gap-2">
                     <svg className="w-3.5 h-3.5 text-violet-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -411,7 +467,7 @@ export function PaperEditor({
                     <button
                       type="button"
                       onClick={() => setIsAddCitationOpen(true)}
-                      className="mt-2 text-xs font-semibold text-[#AAFFC7] hover:underline"
+                      className="mt-2 text-xs font-semibold text-[#AAFFC7] hover:underline cursor-pointer"
                     >
                       + Add first reference
                     </button>
@@ -446,6 +502,69 @@ export function PaperEditor({
                         )}
                       </div>
                     ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── Slides Presentation Sidebar Tab ── */}
+            {activeSidebarTab === 'slides' && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                    Conference Presentation
+                  </h4>
+                  {slidesMarkdown && (
+                    <span className="text-[10px] bg-emerald-500/15 text-emerald-400 font-mono px-2 py-0.5 rounded-md border border-emerald-500/30">
+                      Marp Ready
+                    </span>
+                  )}
+                </div>
+
+                {slidesMarkdown ? (
+                  <div className="rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-4 space-y-3">
+                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                      <span>📑</span>
+                      <span>{slideCount || 8} Academic Slides Generated</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed">
+                      Complete with 15-second speaker cues, conference title slide, and methodology takeaways.
+                    </p>
+                    <div className="pt-2 flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsSlideModalOpen(true)}
+                        className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#AAFFC7] px-3 py-2 text-xs font-bold text-black hover:bg-[#94f5b4] transition-all cursor-pointer shadow-md shadow-[#AAFFC7]/20"
+                      >
+                        <span>⛶ Open Presentation Deck</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsSlideModalOpen(true)}
+                        className="w-full rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                      >
+                        ↺ Regenerate / Customize
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/60 p-4 text-center space-y-3">
+                    <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[#AAFFC7]/15 text-[#AAFFC7] text-lg border border-[#AAFFC7]/30">
+                      📑
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-zinc-200">No slides created yet</p>
+                      <p className="mt-1 text-[11px] text-zinc-400 leading-relaxed">
+                        Transform this research paper into a 8-12 slide Marp conference deck in seconds.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsSlideModalOpen(true)}
+                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#AAFFC7] px-3 py-2 text-xs font-bold text-black hover:bg-[#94f5b4] transition-all cursor-pointer shadow-md shadow-[#AAFFC7]/20"
+                    >
+                      <span>✨ Generate Slide Deck</span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -569,6 +688,22 @@ export function PaperEditor({
               >
                 {'</>'}
               </button>
+
+              <div className="h-4 w-[1px] bg-zinc-800 mx-1" />
+
+              {/* Quick Section Inserters */}
+              <div className="hidden lg:flex items-center gap-1">
+                {['Introduction', 'Methodology', 'Results & Findings', 'Discussion', 'Conclusion'].map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => insertTemplateSection(sec)}
+                    className="px-2 py-1 rounded-md text-[11px] bg-zinc-900/60 border border-zinc-800/80 text-zinc-400 hover:text-[#AAFFC7] hover:border-[#AAFFC7]/30 transition-all"
+                  >
+                    + {sec}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Write vs Preview Tabs */}
@@ -600,6 +735,23 @@ export function PaperEditor({
 
           {/* Canvas Writing Area */}
           <div className="flex-1 p-6 sm:p-8 max-w-4xl w-full mx-auto space-y-6">
+            {/* Quick UX Hint Banner */}
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-[#AAFFC7]/20 bg-[#AAFFC7]/5 px-4 py-2.5 text-xs text-zinc-300">
+              <div className="flex items-center gap-2">
+                <span className="text-[#AAFFC7]">💡</span>
+                <span>
+                  <strong>Tip:</strong> Highlight any text to paraphrase with AI, or click <strong>Presentation Slides</strong> to build conference slides.
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSlideModalOpen(true)}
+                className="font-bold text-[#AAFFC7] hover:underline shrink-0 cursor-pointer"
+              >
+                📑 Slides →
+              </button>
+            </div>
+
             {/* Abstract Block */}
             <div className="rounded-2xl border border-zinc-800/80 bg-zinc-950/40 p-4 sm:p-5 space-y-2">
               <label className="block text-xs font-bold uppercase tracking-wider text-zinc-400">
@@ -656,6 +808,16 @@ export function PaperEditor({
         isOpen={isAddCitationOpen}
         onClose={() => setIsAddCitationOpen(false)}
         onAdd={handleAddNewCitation}
+      />
+
+      {/* Presentation Slide Generator & Deck Viewer */}
+      <SlideGeneratorModal
+        isOpen={isSlideModalOpen}
+        onClose={() => setIsSlideModalOpen(false)}
+        paperTitle={title}
+        paperContent={contentMarkdown || abstract}
+        initialSlidesMarkdown={slidesMarkdown}
+        onSaveSlides={handleSaveSlides}
       />
     </div>
   );

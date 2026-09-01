@@ -26,6 +26,8 @@ export interface IPaper {
   citations: ICitation[];
   peerReviewResults?: IPeerReviewResult;
   attachedNotes?: string[];
+  slidesMarkdown?: string;
+  slideCount?: number;
   status: 'draft' | 'in_review' | 'published' | 'archived';
   createdAt?: string;
   updatedAt?: string;
