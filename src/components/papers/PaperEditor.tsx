@@ -5,6 +5,7 @@ import { IPaper, ICitation } from '@/src/services/paperService';
 import { IntegratedParaphrasePanel } from './IntegratedParaphrasePanel';
 import { AddCitationModal } from './AddCitationModal';
 import { SlideGeneratorModal } from './SlideGeneratorModal';
+import { CitationGraphModal } from './CitationGraphModal';
 import { showAppToast } from '@/src/components/ui/appToastEvents';
 
 interface PaperEditorProps {
@@ -40,6 +41,7 @@ export function PaperEditor({
   const [lastSavedTime, setLastSavedTime] = useState<Date>(new Date());
   const [isAddCitationOpen, setIsAddCitationOpen] = useState(false);
   const [isSlideModalOpen, setIsSlideModalOpen] = useState(false);
+  const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -298,6 +300,17 @@ export function PaperEditor({
             </button>
           </div>
 
+          {/* 3D Semantic Citation & Knowledge Graph */}
+          <button
+            type="button"
+            onClick={() => setIsGraphModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-sky-300 hover:border-sky-500/40 hover:bg-sky-950/20 transition-all cursor-pointer"
+            title="Open 3D Semantic Citation Knowledge Graph"
+          >
+            <span>🌐</span>
+            <span className="hidden sm:inline">3D Knowledge Map</span>
+          </button>
+
           {/* Presentation Slides Generator & Viewer */}
           <button
             type="button"
@@ -452,13 +465,23 @@ export function PaperEditor({
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                     Citations ({citations.length})
                   </h4>
-                  <button
-                    type="button"
-                    onClick={() => setIsAddCitationOpen(true)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 border border-zinc-800 px-2 py-1 text-[11px] font-semibold text-zinc-300 hover:bg-[#AAFFC7] hover:text-black transition-colors cursor-pointer"
-                  >
-                    <span>+ Add</span>
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsGraphModalOpen(true)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-sky-950/40 border border-sky-500/30 px-2 py-1 text-[11px] font-semibold text-sky-300 hover:bg-sky-900/50 transition-colors cursor-pointer"
+                      title="View 3D Semantic Citation Graph"
+                    >
+                      <span>🌐 3D Map</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddCitationOpen(true)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-zinc-900 border border-zinc-800 px-2 py-1 text-[11px] font-semibold text-zinc-300 hover:bg-[#AAFFC7] hover:text-black transition-colors cursor-pointer"
+                    >
+                      <span>+ Add</span>
+                    </button>
+                  </div>
                 </div>
 
                 {citations.length === 0 ? (
@@ -818,6 +841,21 @@ export function PaperEditor({
         paperContent={contentMarkdown || abstract}
         initialSlidesMarkdown={slidesMarkdown}
         onSaveSlides={handleSaveSlides}
+      />
+
+      {/* 3D Semantic Citation Knowledge Map */}
+      <CitationGraphModal
+        isOpen={isGraphModalOpen}
+        onClose={() => setIsGraphModalOpen(false)}
+        paper={{
+          ...paper,
+          title,
+          abstract,
+          contentMarkdown,
+          citations,
+          slidesMarkdown,
+          slideCount,
+        }}
       />
     </div>
   );

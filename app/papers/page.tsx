@@ -10,6 +10,7 @@ import { PaperSkeleton } from '@/src/components/papers/PaperSkeleton';
 import { PaperEditor } from '@/src/components/papers/PaperEditor';
 import { DeletePaperModal } from '@/src/components/papers/DeletePaperModal';
 import { SlideGeneratorModal } from '@/src/components/papers/SlideGeneratorModal';
+import { CitationGraphModal } from '@/src/components/papers/CitationGraphModal';
 
 type StatusFilter = 'all' | 'draft' | 'in_review' | 'published' | 'archived';
 
@@ -57,6 +58,9 @@ export default function PapersStudioPage() {
 
   // Slide Generator / Viewer State
   const [slideModalPaper, setSlideModalPaper] = useState<IPaper | null>(null);
+
+  // 3D Knowledge Graph State
+  const [graphModalPaper, setGraphModalPaper] = useState<IPaper | null>(null);
 
   // Template Dropdown Toggle
   const [isTemplateMenuOpen, setIsTemplateMenuOpen] = useState(false);
@@ -518,6 +522,7 @@ export default function PapersStudioPage() {
                 onOpen={handleOpenExistingPaper}
                 onDelete={(id) => setDeletingPaperId(id)}
                 onOpenSlides={(p) => setSlideModalPaper(p)}
+                onOpenGraph={(p) => setGraphModalPaper(p)}
               />
             ))}
           </div>
@@ -547,6 +552,15 @@ export default function PapersStudioPage() {
           paperContent={slideModalPaper.contentMarkdown || slideModalPaper.abstract}
           initialSlidesMarkdown={slideModalPaper.slidesMarkdown}
           onSaveSlides={handleSaveSlidesForPaper}
+        />
+      )}
+
+      {/* 3D Semantic Citation Knowledge Graph Modal */}
+      {graphModalPaper && (
+        <CitationGraphModal
+          isOpen={Boolean(graphModalPaper)}
+          onClose={() => setGraphModalPaper(null)}
+          paper={graphModalPaper}
         />
       )}
 

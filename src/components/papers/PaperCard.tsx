@@ -8,6 +8,7 @@ interface PaperCardProps {
   onOpen: (paper: IPaper) => void;
   onDelete: (paperId: string) => void;
   onOpenSlides?: (paper: IPaper) => void;
+  onOpenGraph?: (paper: IPaper) => void;
 }
 
 function formatRelativeTime(dateString?: string | Date): string {
@@ -63,7 +64,7 @@ const statusConfig: Record<
   },
 };
 
-export function PaperCard({ paper, onOpen, onDelete, onOpenSlides }: PaperCardProps) {
+export function PaperCard({ paper, onOpen, onDelete, onOpenSlides, onOpenGraph }: PaperCardProps) {
   const paperId = paper.id || paper._id || '';
   const status = paper.status || 'draft';
   const statusBadge = statusConfig[status] || statusConfig.draft;
@@ -148,6 +149,20 @@ export function PaperCard({ paper, onOpen, onDelete, onOpenSlides }: PaperCardPr
         </div>
 
         <div className="flex items-center gap-1.5">
+          {onOpenGraph && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onOpenGraph(paper);
+              }}
+              className="inline-flex items-center gap-1 rounded-xl bg-zinc-900 border border-zinc-800 px-2.5 py-1 text-xs font-semibold text-zinc-300 hover:text-sky-300 hover:border-sky-500/40 hover:bg-sky-950/20 transition-all cursor-pointer"
+              title="Explore 3D Semantic Citation Graph"
+            >
+              <span>🌐 Graph</span>
+            </button>
+          )}
+
           {onOpenSlides && (
             <button
               type="button"
