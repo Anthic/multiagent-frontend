@@ -40,7 +40,7 @@ export const walletService = {
 
   // Fetch token usage and transaction audit history
   getAuditLogs: async (): Promise<ITokenAuditLog[]> => {
-    const response = await api.get<ITokenAuditLog[]>('/wallet/audit-logs');
+    const response = await api.get<ITokenAuditLog[]>('/wallet/logs');
     return (response?.data || []) as ITokenAuditLog[];
   },
 

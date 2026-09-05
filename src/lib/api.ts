@@ -14,6 +14,11 @@ const normalizeApiBaseUrl = (baseUrl?: string): string | undefined => {
 };
 
 type RetryableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
+const getSecureCookieFlag = () =>
+  typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+
+
+
 
 // csrf token helper function
 export const getCsrfToken = (): string | null => {
@@ -143,10 +148,10 @@ const createAxiosInstance = (): AxiosInstance => {
             const newToken = refreshRes.data?.data?.accessToken;
             const newRefreshToken = refreshRes.data?.data?.refreshToken;
             if (newToken && typeof window !== 'undefined') {
-              document.cookie = `accessToken=${newToken}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
+              document.cookie = `accessToken=${newToken}; path=/; max-age=${15 * 60}; SameSite=Lax${getSecureCookieFlag()}`;
             }
             if (newRefreshToken && typeof window !== 'undefined') {
-              document.cookie = `refreshToken=${newRefreshToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax; Secure`;
+              document.cookie = `refreshToken=${newRefreshToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${getSecureCookieFlag()}`;
             }
             processQueue(null);
             return instance(original);
@@ -157,8 +162,8 @@ const createAxiosInstance = (): AxiosInstance => {
             useAuthStore.getState().clearAuth();
 
             if (typeof window !== 'undefined') {
-              document.cookie = 'accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
-              document.cookie = 'refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax; Secure';
+              document.cookie = `accessToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${getSecureCookieFlag()}`;
+              document.cookie = `refreshToken=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${getSecureCookieFlag()}`;
               window.location.href = '/login';
             }
 

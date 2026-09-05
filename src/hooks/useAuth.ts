@@ -71,6 +71,11 @@ export function useCurrentUser() {
 // ─────────────────────────────────────────────────────────────────────────────
 // useLogin
 // ─────────────────────────────────────────────────────────────────────────────
+
+const getSecureCookieFlag = () =>
+  typeof window !== 'undefined' && window.location.protocol === 'https:' ? '; Secure' : '';
+
+
 export function useLogin() {
   const queryClient = useQueryClient();
   const { setUser, setLoading } = useAuthStore.getState();
@@ -90,11 +95,11 @@ export function useLogin() {
       }
 
       if (token && typeof window !== 'undefined') {
-        document.cookie = `accessToken=${token}; path=/; max-age=${15 * 60}; SameSite=Lax; Secure`;
+        document.cookie = `accessToken=${token}; path=/; max-age=${15 * 60}; SameSite=Lax${getSecureCookieFlag()}`;
       }
 
       if (refreshToken && typeof window !== 'undefined') {
-        document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax; Secure`;
+        document.cookie = `refreshToken=${refreshToken}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${getSecureCookieFlag()}`;
       }
 
       // Read the callbackUrl that middleware injected (e.g. /research, /dashboard)
@@ -118,8 +123,8 @@ export function useLogin() {
 // useRegister
 // ─────────────────────────────────────────────────────────────────────────────
 export function useRegister() {
-  const queryClient = useQueryClient();
-  const { setUser, setLoading } = useAuthStore.getState();
+  
+  const {  setLoading } = useAuthStore.getState();
 
   return useMutation({
     mutationFn: (payload: RegisterPayload) => AuthService.register(payload),

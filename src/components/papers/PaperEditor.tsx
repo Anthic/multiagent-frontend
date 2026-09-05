@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { IPaper, ICitation } from '@/src/services/paperService';
 import { IntegratedParaphrasePanel } from './IntegratedParaphrasePanel';
 import { AddCitationModal } from './AddCitationModal';
 import { SlideGeneratorModal } from './SlideGeneratorModal';
 import { CitationGraphModal } from './CitationGraphModal';
 import { showAppToast } from '@/src/components/ui/appToastEvents';
+import { academicService } from '@/src/services/academicService';
 
 interface PaperEditorProps {
   paper: IPaper;
@@ -20,7 +21,7 @@ export function PaperEditor({
   paper,
   onSave,
   onClose,
-  onDelete,
+  
   onAddCitation,
 }: PaperEditorProps) {
   const [title, setTitle] = useState(paper.title || '');
@@ -42,9 +43,54 @@ export function PaperEditor({
   const [isAddCitationOpen, setIsAddCitationOpen] = useState(false);
   const [isSlideModalOpen, setIsSlideModalOpen] = useState(false);
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
+  const [isReviewing, setIsReviewing] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+   const handleTriggerPeerReview = async () => {
+    if (!contentMarkdown || contentMarkdown.trim().length < 50) {
+      showAppToast({
+        type: 'error',
+        title: 'Insufficient Content',
+        message: 'Please write some research content before running peer review.',
+      });
+      return;
+    }
+    try {
+      setIsReviewing(true);
+      showAppToast({
+        type: 'info',
+        title: 'Running Peer Review',
+        message: '3-Agent simulated panel is evaluating your paper...',
+      });
+      const reviewRes = await academicService.peerReview(title || 'Untitled Paper', contentMarkdown);
+      const reviewText = (reviewRes as any).review_markdown || '';
+      
+      const scoreMatch = reviewText.match(/Score:\s*(\d+)/i);
+      const score = scoreMatch ? parseInt(scoreMatch[1], 10) : 80;
+      const peerReviewData = {
+        overallScore: score,
+        methodologyFeedback: reviewText ? reviewText.slice(0, 300) + '...' : 'Review completed',
+        domainFeedback: 'Evaluated by 3-agent academic panel',
+        clarityFeedback: reviewText,
+      };
+      await onSave({
+        peerReviewResults: peerReviewData,
+      });
+      showAppToast({
+        type: 'success',
+        title: 'Peer Review Complete',
+        message: 'Review findings and scores have been attached to your paper.',
+      });
+    } catch {
+      showAppToast({
+        type: 'error',
+        title: 'Peer Review Failed',
+        message: 'Could not connect to AI review panel. Please check your agent connection.',
+      });
+    } finally {
+      setIsReviewing(false);
+    }
+  };
   // Sync state when paper prop changes
   useEffect(() => {
     setTitle(paper.title || '');
@@ -620,8 +666,16 @@ export function PaperEditor({
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-4 text-center">
+                  <div className="rounded-xl border border-zinc-800/80 bg-zinc-900/30 p-4 text-center space-y-3">
                     <p className="text-xs text-zinc-400">No peer review generated yet.</p>
+                    <button
+                      type="button"
+                      onClick={handleTriggerPeerReview}
+                      disabled={isReviewing}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      <span>{isReviewing ? ' Reviewing...' : ' Run 3-Agent Review'}</span>
+                    </button>
                   </div>
                 )}
               </div>
