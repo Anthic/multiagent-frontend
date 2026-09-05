@@ -8,6 +8,7 @@ import { SlideGeneratorModal } from './SlideGeneratorModal';
 import { CitationGraphModal } from './CitationGraphModal';
 import { showAppToast } from '@/src/components/ui/appToastEvents';
 import { academicService } from '@/src/services/academicService';
+import { DefenseSimulatorModal } from './DefenseSimulatorModal';
 
 interface PaperEditorProps {
   paper: IPaper;
@@ -44,6 +45,7 @@ export function PaperEditor({
   const [isSlideModalOpen, setIsSlideModalOpen] = useState(false);
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
   const [isReviewing, setIsReviewing] = useState(false);
+const [isDefenseModalOpen, setIsDefenseModalOpen] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
    const handleTriggerPeerReview = async () => {
@@ -353,7 +355,11 @@ export function PaperEditor({
             className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs font-bold text-zinc-300 hover:text-sky-300 hover:border-sky-500/40 hover:bg-sky-950/20 transition-all cursor-pointer"
             title="Open 3D Semantic Citation Knowledge Graph"
           >
-            <span>🌐</span>
+            <svg className="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20" />
+              <path d="M2 12h20" />
+            </svg>
             <span className="hidden sm:inline">3D Knowledge Map</span>
           </button>
 
@@ -368,10 +374,29 @@ export function PaperEditor({
             }`}
             title="Generate or Present Marp Slide Deck"
           >
-            <span>📑</span>
+            <svg className="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect width="18" height="14" x="3" y="3" rx="2" />
+              <path d="M3 9h18" />
+              <path d="M9 21h6" />
+              <path d="M12 17v4" />
+            </svg>
             <span className="hidden sm:inline">
               {slidesMarkdown ? `Slides (${slideCount || 8})` : 'Presentation Slides'}
             </span>
+          </button>
+
+          {/* Thesis Defense Simulator Button */}
+          <button
+            type="button"
+            onClick={() => setIsDefenseModalOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-1.5 text-xs font-bold text-amber-400 hover:bg-amber-500/20 transition-all cursor-pointer shadow-sm shadow-amber-950/20"
+            title="Open Thesis Defense & Viva Simulator"
+          >
+            <svg className="w-3.5 h-3.5 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+              <path d="M6 12v5c0 2 2 3 6 3s6-1 6-3v-5" />
+            </svg>
+            <span className="hidden sm:inline">Defense Simulator</span>
           </button>
 
           {/* AI Tools Toggle Button */}
@@ -910,6 +935,14 @@ export function PaperEditor({
           slidesMarkdown,
           slideCount,
         }}
+      />
+
+      {/* Thesis Defense & Viva Simulator Modal */}
+      <DefenseSimulatorModal
+        isOpen={isDefenseModalOpen}
+        onClose={() => setIsDefenseModalOpen(false)}
+        paperId={paper._id || paper.id || ''}
+        paperTitle={title}
       />
     </div>
   );

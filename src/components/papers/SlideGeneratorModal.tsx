@@ -113,7 +113,12 @@ export function SlideGeneratorModal({
         <div className="flex items-center justify-between border-b border-zinc-800/80 px-6 py-4 bg-zinc-900/60">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#AAFFC7]/15 text-[#AAFFC7] font-bold border border-[#AAFFC7]/30">
-              📑
+              <svg className="w-5 h-5 text-[#AAFFC7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect width="18" height="14" x="3" y="3" rx="2" />
+                <path d="M3 9h18" />
+                <path d="M9 21h6" />
+                <path d="M12 17v4" />
+              </svg>
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-bold text-white">
@@ -141,7 +146,9 @@ export function SlideGeneratorModal({
             <div className="py-16 text-center max-w-md mx-auto space-y-6">
               <div className="relative mx-auto flex h-20 w-20 items-center justify-center">
                 <div className="absolute inset-0 rounded-full border-2 border-[#AAFFC7]/20 border-t-[#AAFFC7] animate-spin" />
-                <span className="text-2xl">✨</span>
+                <svg className="w-8 h-8 text-[#AAFFC7]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                </svg>
               </div>
 
               <div>
@@ -272,8 +279,10 @@ export function SlideGeneratorModal({
                   onClick={handleGenerate}
                   className="inline-flex items-center gap-2 rounded-xl bg-[#AAFFC7] px-6 py-2.5 text-xs font-bold text-black hover:bg-[#94f5b4] active:scale-95 transition-all shadow-lg shadow-[#AAFFC7]/20 cursor-pointer"
                 >
+                  <svg className="w-4 h-4 text-black" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                  </svg>
                   <span>Generate {numSlides} Slides</span>
-                  <span>✨</span>
                 </button>
               </div>
             </div>
